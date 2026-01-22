@@ -1,0 +1,10 @@
+{
+  "playwright": {
+    "command": "npx",
+    "args": [
+      "@playwright/mcp@latest",
+      "--user-data-dir",
+      "~/.social_publisher/browser_data"
+    ]
+  }
+}
