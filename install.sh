@@ -18,12 +18,18 @@ CODEX_VERSION="0.1"
 GEMINI_CLI_VERSION="0.1"
 GEMINI_MCP_VERSION="0.1.8"
 
-# Skills directory
+# Directories
 SKILLS_DIR="$HOME/.claude/skills"
+COMMANDS_DIR="$HOME/.claude/commands"
+TEMPLATES_DIR="$HOME/.claude/templates"
 CC_SUITE_DIR="$(cd "$(dirname "$0")" && pwd)"
+BORIS_DIR="$CC_SUITE_DIR/skills/boris-workflow"
 
 # All available skills
 ALL_SKILLS="crosscheck social-publisher claude-code-setup create-subagent"
+
+# Boris workflow commands (installed to ~/.claude/commands/)
+BORIS_COMMANDS="init add-rule commit-push-pr setup-permissions setup-plugins setup-format-hook setup-ralph-loop"
 
 # Parse arguments
 FORCE=false
@@ -61,7 +67,10 @@ usage() {
     echo "    create-subagent    Subagent creation helper"
     echo ""
     echo "  Skill groups:"
-    echo "    boris-workflow     All Boris workflow tools (claude-code-setup + create-subagent)"
+    echo "    boris-workflow     Complete Boris workflow (skills + commands + templates)"
+    echo "                       - Skills: claude-code-setup, create-subagent"
+    echo "                       - Commands: init, setup-permissions, setup-plugins, etc."
+    echo "                       - Templates: agents, permissions, plugins presets"
     echo ""
     echo "Examples:"
     echo "  $0                           # Install all skills"
@@ -102,6 +111,69 @@ expand_skill() {
         boris-workflow)     echo "claude-code-setup create-subagent" ;;
         *)                  echo "$skill" ;;
     esac
+}
+
+# Install Boris workflow commands
+install_boris_commands() {
+    echo -e "${BLUE}Installing Boris workflow commands...${NC}"
+
+    mkdir -p "$COMMANDS_DIR"
+
+    for cmd in $BORIS_COMMANDS; do
+        local src="$BORIS_DIR/commands/${cmd}.md"
+        if [ -f "$src" ]; then
+            cp "$src" "$COMMANDS_DIR/"
+            echo -e "  ${GREEN}✓${NC} $cmd"
+        fi
+    done
+}
+
+# Install Boris workflow templates
+install_boris_templates() {
+    echo -e "${BLUE}Installing Boris workflow templates...${NC}"
+
+    mkdir -p "$TEMPLATES_DIR"
+
+    # Copy all templates
+    if [ -d "$BORIS_DIR/templates" ]; then
+        cp -r "$BORIS_DIR/templates"/* "$TEMPLATES_DIR/"
+        echo -e "  ${GREEN}✓${NC} CLAUDE.md template"
+        echo -e "  ${GREEN}✓${NC} settings.json template"
+        echo -e "  ${GREEN}✓${NC} agents/ (4 templates)"
+        echo -e "  ${GREEN}✓${NC} permissions/ (3 presets)"
+        echo -e "  ${GREEN}✓${NC} plugins/ (5 presets)"
+    fi
+}
+
+# Install social-publisher Python dependencies
+install_social_publisher_deps() {
+    local skill_dest="$SKILLS_DIR/social-publisher"
+    local requirements="$skill_dest/requirements.txt"
+
+    if [ -f "$requirements" ]; then
+        echo -e "${BLUE}Installing social-publisher Python dependencies...${NC}"
+
+        # Check Python3
+        if ! command -v python3 &> /dev/null; then
+            echo -e "${YELLOW}⚠${NC} Python3 not found. Please install Python 3.8+ manually."
+            return 1
+        fi
+
+        # Install requirements
+        if python3 -m pip install -r "$requirements" --quiet 2>/dev/null; then
+            echo -e "${GREEN}✓${NC} Python dependencies installed"
+        else
+            echo -e "${YELLOW}⚠${NC} Failed to install Python dependencies"
+            echo "  Run manually: pip install -r $requirements"
+        fi
+
+        # Make scripts executable
+        chmod +x "$skill_dest/scripts/"*.py 2>/dev/null || true
+        chmod +x "$skill_dest/scripts/"*.sh 2>/dev/null || true
+        chmod +x "$skill_dest/codex/"*.sh 2>/dev/null || true
+
+        echo -e "${GREEN}✓${NC} Scripts ready at: $skill_dest/scripts/"
+    fi
 }
 
 check_prerequisites() {
@@ -274,6 +346,33 @@ doctor() {
     done
 
     echo ""
+    echo "Installed Commands:"
+    for cmd in $BORIS_COMMANDS; do
+        if [ -f "$COMMANDS_DIR/${cmd}.md" ]; then
+            echo -e "  ${GREEN}✓${NC} /$cmd"
+        fi
+    done
+
+    echo ""
+    echo "Installed Templates:"
+    if [ -d "$TEMPLATES_DIR" ]; then
+        [ -f "$TEMPLATES_DIR/CLAUDE.md" ] && echo -e "  ${GREEN}✓${NC} CLAUDE.md"
+        [ -f "$TEMPLATES_DIR/settings.json" ] && echo -e "  ${GREEN}✓${NC} settings.json"
+        [ -d "$TEMPLATES_DIR/agents" ] && echo -e "  ${GREEN}✓${NC} agents/ ($(ls "$TEMPLATES_DIR/agents" 2>/dev/null | wc -l | tr -d ' ') templates)"
+        [ -d "$TEMPLATES_DIR/permissions" ] && echo -e "  ${GREEN}✓${NC} permissions/ ($(ls "$TEMPLATES_DIR/permissions" 2>/dev/null | wc -l | tr -d ' ') presets)"
+        [ -d "$TEMPLATES_DIR/plugins" ] && echo -e "  ${GREEN}✓${NC} plugins/ ($(ls "$TEMPLATES_DIR/plugins" 2>/dev/null | wc -l | tr -d ' ') presets)"
+    fi
+
+    # Check social-publisher scripts
+    if [ -d "$SKILLS_DIR/social-publisher/scripts" ]; then
+        echo ""
+        echo "Social Publisher Scripts:"
+        [ -f "$SKILLS_DIR/social-publisher/scripts/check_login.py" ] && echo -e "  ${GREEN}✓${NC} check_login.py"
+        [ -f "$SKILLS_DIR/social-publisher/scripts/content_tracker.py" ] && echo -e "  ${GREEN}✓${NC} content_tracker.py"
+        [ -f "$SKILLS_DIR/social-publisher/scripts/publish.sh" ] && echo -e "  ${GREEN}✓${NC} publish.sh"
+    fi
+
+    echo ""
     echo -e "${YELLOW}Remember to login to external services:${NC}"
     echo "  codex   # Login to OpenAI (if using crosscheck)"
     echo "  gemini  # Login to Google (if using crosscheck)"
@@ -334,6 +433,22 @@ for skill in $EXPANDED_SKILLS; do
     install_skill "$skill"
     echo ""
 done
+
+# Install Boris workflow commands and templates if any Boris skill is selected
+if echo "$EXPANDED_SKILLS" | grep -q "claude-code-setup\|create-subagent"; then
+    echo ""
+    install_boris_commands
+    echo ""
+    install_boris_templates
+    echo ""
+fi
+
+# Install social-publisher dependencies if selected
+if echo "$EXPANDED_SKILLS" | grep -q "social-publisher"; then
+    echo ""
+    install_social_publisher_deps
+    echo ""
+fi
 
 # Run doctor
 doctor

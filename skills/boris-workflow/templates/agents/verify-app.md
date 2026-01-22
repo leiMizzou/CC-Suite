@@ -1,0 +1,252 @@
+# Verify App Agent
+
+## Objective / 目标
+
+End-to-end verification of application state, ensuring code changes don't break existing functionality.
+端到端验证应用状态，确保代码变更不会破坏现有功能。
+
+## Verification Flow / 验证流程
+
+```
+┌─────────────┐
+│ 类型检查    │
+└──────┬──────┘
+       ↓
+┌─────────────┐
+│ Lint 检查   │
+└──────┬──────┘
+       ↓
+┌─────────────┐
+│ 单元测试    │
+└──────┬──────┘
+       ↓
+┌─────────────┐
+│ 构建测试    │
+└──────┬──────┘
+       ↓
+┌─────────────┐
+│ E2E 测试    │ (可选)
+└──────┬──────┘
+       ↓
+   ✅ 验证通过
+```
+
+## 验证命令
+
+### Node.js / TypeScript 项目
+
+```bash
+# 1. 类型检查
+bun run typecheck
+# 或: npx tsc --noEmit
+
+# 2. Lint 检查
+bun run lint
+# 或: npx eslint .
+
+# 3. 单元测试
+bun run test
+# 或: npx jest / npx vitest
+
+# 4. 构建测试
+bun run build
+# 或: npx vite build / npx next build
+
+# 5. E2E 测试 (可选)
+bun run test:e2e
+# 或: npx playwright test
+```
+
+### Python 项目
+
+```bash
+# 1. 类型检查
+mypy .
+# 或: pyright
+
+# 2. Lint 检查
+ruff check .
+# 或: flake8
+
+# 3. 单元测试
+pytest
+
+# 4. 构建测试
+python -m build
+```
+
+## 执行逻辑
+
+```typescript
+async function verifyApp() {
+  const results = {
+    typecheck: null,
+    lint: null,
+    test: null,
+    build: null,
+  };
+
+  // 1. 类型检查
+  console.log('🔍 运行类型检查...');
+  results.typecheck = await run('bun run typecheck');
+  if (!results.typecheck.success) {
+    return reportFailure('类型检查失败', results.typecheck);
+  }
+
+  // 2. Lint 检查
+  console.log('📋 运行 Lint 检查...');
+  results.lint = await run('bun run lint');
+  if (!results.lint.success) {
+    return reportFailure('Lint 检查失败', results.lint);
+  }
+
+  // 3. 单元测试
+  console.log('🧪 运行单元测试...');
+  results.test = await run('bun run test');
+  if (!results.test.success) {
+    return reportFailure('测试失败', results.test);
+  }
+
+  // 4. 构建测试
+  console.log('🏗️ 运行构建...');
+  results.build = await run('bun run build');
+  if (!results.build.success) {
+    return reportFailure('构建失败', results.build);
+  }
+
+  return reportSuccess(results);
+}
+```
+
+## 失败处理
+
+### 自动修复尝试
+
+```typescript
+async function attemptAutoFix(error: Error) {
+  // Lint 错误 - 尝试自动修复
+  if (error.type === 'lint') {
+    await run('bun run lint:fix');
+    return rerunVerification();
+  }
+
+  // 类型错误 - 分析并建议修复
+  if (error.type === 'typecheck') {
+    return analyzeTypeErrors(error);
+  }
+
+  // 测试失败 - 分析失败原因
+  if (error.type === 'test') {
+    return analyzeTestFailures(error);
+  }
+
+  return { autoFixed: false, suggestions: [] };
+}
+```
+
+### 错误分析
+
+对于每种失败，提供：
+1. 错误位置（文件、行号）
+2. 错误原因分析
+3. 修复建议
+4. 相关文档链接
+
+## 输出格式
+
+### 成功
+
+```
+╔══════════════════════════════════════════════════════╗
+║           ✅ 应用验证通过                             ║
+╚══════════════════════════════════════════════════════╝
+
+📊 验证结果
+
+┌────────────┬────────┬──────────┐
+│ 检查项     │ 状态   │ 耗时     │
+├────────────┼────────┼──────────┤
+│ 类型检查   │ ✅     │ 2.3s     │
+│ Lint 检查  │ ✅     │ 1.5s     │
+│ 单元测试   │ ✅     │ 8.2s     │
+│ 构建       │ ✅     │ 12.1s    │
+└────────────┴────────┴──────────┘
+
+📈 测试统计
+- 测试套件: 15 passed
+- 测试用例: 142 passed
+- 覆盖率: 85.3%
+
+⏱️ 总耗时: 24.1s
+```
+
+### 失败
+
+```
+╔══════════════════════════════════════════════════════╗
+║           ❌ 应用验证失败                             ║
+╚══════════════════════════════════════════════════════╝
+
+📊 验证结果
+
+┌────────────┬────────┬──────────┐
+│ 检查项     │ 状态   │ 耗时     │
+├────────────┼────────┼──────────┤
+│ 类型检查   │ ✅     │ 2.3s     │
+│ Lint 检查  │ ✅     │ 1.5s     │
+│ 单元测试   │ ❌     │ 5.1s     │
+│ 构建       │ ⏭️     │ -        │
+└────────────┴────────┴──────────┘
+
+🔴 失败详情
+
+位置: src/utils/math.test.ts:45
+测试: "divide > should handle edge cases"
+
+错误:
+  Expected: 0
+  Received: NaN
+
+建议修复:
+  检查 divide 函数中对 0/0 的处理
+
+相关代码:
+  src/utils/math.ts:12
+
+🔧 自动修复
+  无法自动修复，需要手动处理
+```
+
+## 使用方式
+
+### 命令行
+
+```
+验证应用
+```
+
+### 自动触发
+
+配置为 pre-commit hook 或 CI 步骤。
+
+### 与其他 Agent 配合
+
+```
+完成代码修改后，使用 verify-app 验证
+```
+
+## 配置选项
+
+```json
+{
+  "verify-app": {
+    "skipE2E": true,
+    "coverage": {
+      "threshold": 80,
+      "fail": false
+    },
+    "timeout": 300000,
+    "retries": 1
+  }
+}
+```
