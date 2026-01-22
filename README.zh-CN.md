@@ -9,20 +9,24 @@
 
 精选的 Claude Code 技能集合，通过**信任**、**传播**和**效率**增强您的 AI 工作流。
 
-## 技能列表
+## 技能概览
 
-| 技能 | 图标 | 描述 | MCP 依赖 |
-|------|------|------|----------|
-| [CrossCheck](skills/crosscheck/) | 🛡️ | 多模型交叉验证 (Claude + Codex + Gemini) | Codex, Gemini |
-| [SocialPublisher](skills/social-publisher/) | 📢 | 社交媒体自动发布 | Playwright |
-| [BorisWorkflow](skills/boris-workflow/) | ⚙️⚡ | Claude Code 环境工具集 | Codex |
+```
+CC Suite
+├── 🛡️ crosscheck          ─── 多模型交叉验证 (Claude + Codex + Gemini)
+├── 📢 social-publisher     ─── 社交媒体自动发布
+└── ⚙️⚡ boris-workflow      ─── Claude Code 环境工具集
+        ├── ⚙️ claude-code-setup  ─── 初始化开发环境 (一次性)
+        └── ⚡ create-subagent     ─── 创建自定义 Agent (持续使用)
+```
 
-### BorisWorkflow 子技能
+| 技能 | 描述 | MCP 依赖 | 安装命令 |
+|------|------|----------|----------|
+| crosscheck | 3轮交叉验证，Claude + Codex + Gemini | Codex, Gemini | `./install.sh crosscheck` |
+| social-publisher | 发布到 Twitter、微信、小红书 | Playwright | `./install.sh social-publisher` |
+| boris-workflow | 开发环境工具 (包含2个子技能) | Codex | `./install.sh boris-workflow` |
 
-| 技能 | 图标 | 描述 | 使用频率 |
-|------|------|------|----------|
-| [claude-code-setup](skills/boris-workflow/claude-code-setup/) | ⚙️ | 初始化开发环境 | 一次性 |
-| [create-subagent](skills/boris-workflow/create-subagent/) | ⚡ | 创建自定义 Agent | 持续使用 |
+> **说明**: `boris-workflow` 是一个技能组，包含两个相关技能。使用 `./install.sh boris-workflow` 同时安装两者，或单独安装 `./install.sh claude-code-setup` 或 `./install.sh create-subagent`。
 
 ## 一键安装
 
@@ -103,6 +107,8 @@ CC-Suite/
 │       ├── README.md
 │       ├── claude-code-setup/   # ⚙️ 环境配置
 │       └── create-subagent/     # ⚡ 子代理创建
+├── scripts/
+│   └── verify.sh                # 安装验证脚本
 ├── assets/                      # 共享资源
 ├── docs/                        # 文档
 └── install.sh                   # 统一安装脚本
@@ -110,14 +116,23 @@ CC-Suite/
 
 ## 验证安装
 
+运行完整验证脚本：
+```bash
+./scripts/verify.sh
+```
+
+检查内容包括：
+- 已安装技能状态
+- MCP 服务器连接
+- 工具名称与 SKILL.md 匹配
+- 功能覆盖完整性
+
+手动检查：
 ```bash
 claude mcp list
 # codex: codex mcp-server - ✓ Connected
 # gemini: npx -y gemini-mcp-tool - ✓ Connected
-```
 
-检查已安装的技能：
-```bash
 ls ~/.claude/skills/
 # crosscheck  social-publisher  claude-code-setup  create-subagent
 ```

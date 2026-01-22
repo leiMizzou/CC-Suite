@@ -201,6 +201,58 @@ install_skill() {
     echo -e "${GREEN}✓${NC} Skill '$skill' installed to $skill_dest"
 }
 
+verify_mcp_tools() {
+    echo ""
+    echo -e "${BLUE}Verifying MCP tool availability...${NC}"
+    echo ""
+
+    local mcp_output=$(claude mcp list 2>/dev/null)
+    local has_errors=false
+
+    # Expected tool names used in SKILL.md files
+    # crosscheck uses: mcp__codex__codex, mcp__gemini__ask-gemini
+    # create-subagent uses: mcp__codex__codex
+
+    # Check codex MCP
+    if echo "$mcp_output" | grep -q "codex.*Connected"; then
+        echo -e "${GREEN}✓${NC} codex MCP server connected"
+        echo "  Expected tool: mcp__codex__codex"
+    elif echo "$mcp_output" | grep -q "codex"; then
+        echo -e "${YELLOW}⚠${NC} codex MCP server configured but not connected"
+        echo "  Run 'codex' to login first"
+        has_errors=true
+    else
+        echo -e "${RED}✗${NC} codex MCP server not configured"
+        has_errors=true
+    fi
+
+    # Check gemini MCP
+    if echo "$mcp_output" | grep -q "gemini.*Connected"; then
+        echo -e "${GREEN}✓${NC} gemini MCP server connected"
+        echo "  Expected tool: mcp__gemini__ask-gemini"
+    elif echo "$mcp_output" | grep -q "gemini"; then
+        echo -e "${YELLOW}⚠${NC} gemini MCP server configured but not connected"
+        echo "  Run 'gemini' to login first"
+        has_errors=true
+    else
+        echo -e "${RED}✗${NC} gemini MCP server not configured"
+        has_errors=true
+    fi
+
+    # Check playwright MCP
+    if echo "$mcp_output" | grep -q "playwright.*Connected"; then
+        echo -e "${GREEN}✓${NC} playwright MCP server connected"
+    elif echo "$mcp_output" | grep -q "playwright"; then
+        echo -e "${YELLOW}⚠${NC} playwright MCP server configured but not connected"
+    fi
+
+    if $has_errors; then
+        echo ""
+        echo -e "${YELLOW}Note: Some MCP servers need authentication.${NC}"
+        echo "After logging in, restart Claude Code with /exit"
+    fi
+}
+
 doctor() {
     echo ""
     echo -e "${BLUE}Running system check...${NC}"
@@ -209,6 +261,9 @@ doctor() {
     # Check MCP servers
     echo "MCP Server Status:"
     claude mcp list 2>/dev/null || echo "  (Unable to list MCP servers)"
+
+    # Verify MCP tool names match SKILL.md expectations
+    verify_mcp_tools
 
     echo ""
     echo "Installed Skills:"

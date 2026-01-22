@@ -9,20 +9,24 @@ English | [中文](README.zh-CN.md)
 
 A curated collection of Claude Code skills that enhance your AI workflow with **Trust**, **Reach**, and **Efficiency**.
 
-## Skills
+## Skills Overview
 
-| Skill | Icon | Description | MCP Dependencies |
-|-------|------|-------------|------------------|
-| [CrossCheck](skills/crosscheck/) | 🛡️ | Multi-model verification (Claude + Codex + Gemini) | Codex, Gemini |
-| [SocialPublisher](skills/social-publisher/) | 📢 | Automated social media publishing | Playwright |
-| [BorisWorkflow](skills/boris-workflow/) | ⚙️⚡ | Claude Code environment tools | Codex |
+```
+CC Suite
+├── 🛡️ crosscheck          ─── Multi-model verification (Claude + Codex + Gemini)
+├── 📢 social-publisher     ─── Automated social media publishing
+└── ⚙️⚡ boris-workflow      ─── Claude Code environment tools
+        ├── ⚙️ claude-code-setup  ─── Initialize dev environment (one-time)
+        └── ⚡ create-subagent     ─── Create custom agents (ongoing)
+```
 
-### BorisWorkflow Sub-Skills
+| Skill | Description | MCP Dependencies | Install Command |
+|-------|-------------|------------------|-----------------|
+| crosscheck | 3-round cross-verification with Claude, Codex, Gemini | Codex, Gemini | `./install.sh crosscheck` |
+| social-publisher | Publish to Twitter, WeChat, Xiaohongshu | Playwright | `./install.sh social-publisher` |
+| boris-workflow | Dev environment tools (2 sub-skills) | Codex | `./install.sh boris-workflow` |
 
-| Skill | Icon | Description | Usage |
-|-------|------|-------------|-------|
-| [claude-code-setup](skills/boris-workflow/claude-code-setup/) | ⚙️ | Initialize dev environment | One-time |
-| [create-subagent](skills/boris-workflow/create-subagent/) | ⚡ | Create custom agents | Ongoing |
+> **Note**: `boris-workflow` is a skill group containing two related skills. Install with `./install.sh boris-workflow` to get both, or install individually with `./install.sh claude-code-setup` or `./install.sh create-subagent`.
 
 ## One-Line Install
 
@@ -103,6 +107,8 @@ CC-Suite/
 │       ├── README.md
 │       ├── claude-code-setup/   # ⚙️ Environment setup
 │       └── create-subagent/     # ⚡ Subagent creation
+├── scripts/
+│   └── verify.sh                # Installation verification
 ├── assets/                      # Shared resources
 ├── docs/                        # Documentation
 └── install.sh                   # Unified installer
@@ -110,14 +116,23 @@ CC-Suite/
 
 ## Verify Installation
 
+Run the comprehensive verification script:
+```bash
+./scripts/verify.sh
+```
+
+This checks:
+- Installed skills status
+- MCP server connections
+- Tool names match SKILL.md expectations
+- Feature coverage
+
+Manual checks:
 ```bash
 claude mcp list
 # codex: codex mcp-server - ✓ Connected
 # gemini: npx -y gemini-mcp-tool - ✓ Connected
-```
 
-Check installed skills:
-```bash
 ls ~/.claude/skills/
 # crosscheck  social-publisher  claude-code-setup  create-subagent
 ```
