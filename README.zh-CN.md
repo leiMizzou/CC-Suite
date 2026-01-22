@@ -86,15 +86,74 @@ gemini       # 登录 Google（仅首次需要）
 /create-subagent code-reviewer
 ```
 
-## 技能组合
+## 技能协同
 
-组合使用技能实现强大工作流：
+CC-Suite 三部分形成强大的闭环系统：
 
 ```
-# 工作流：验证 → 发布
-1. /crosscheck "最新AI趋势分析"
-2. /social-media-publisher <已验证内容> all
+┌─────────────────────────────────────────────────────────┐
+│                    SocialPublisher                       │
+│                (输出层 - 内容分发 & 趋势追踪)              │
+└─────────────────────────────────────────────────────────┘
+                           ↑
+┌─────────────────────────────────────────────────────────┐
+│                      CrossCheck                          │
+│                (验证层 - 质量保障 & 决策验证)              │
+└─────────────────────────────────────────────────────────┘
+                           ↑
+┌─────────────────────────────────────────────────────────┐
+│                    BorisWorkflow                         │
+│              (基础层 - 环境 & 模板 & 自主开发)             │
+└─────────────────────────────────────────────────────────┘
 ```
+
+### 工作流 1：新项目启动
+```bash
+/init                                    # 初始化 Claude Code 环境
+/setup-permissions --preset recommended  # 配置权限
+/setup-plugins --preset web-dev          # 配置 MCP 插件
+/create-subagent                         # 创建项目专用 Agent
+```
+
+### 工作流 2：自主开发 + 验证
+```bash
+/setup-ralph-loop --enable               # 启用 Ralph Loop
+
+/ralph-loop "用 TDD 方式实现用户认证，完成后输出 <promise>DONE</promise>" \
+  --max-iterations 30                    # 自主迭代开发
+
+/crosscheck "JWT vs Session，哪个更适合这个场景？"  # 验证技术决策
+```
+
+### 工作流 3：趋势追踪 → 开发灵感
+```bash
+# 1. 搜索热门技术讨论
+/social-media-publisher "搜索 10 个今天最热的 AI Agent 帖子，只看不互动"
+
+# 2. 验证某个热门观点
+/crosscheck "ReAct 模式真的是 AI Agent 的最佳选择吗？"
+
+# 3. 基于验证结果开发
+/ralph-loop "实现一个基于 ReAct 模式的 AI Agent" --max-iterations 20
+```
+
+### 工作流 4：验证 → 发布
+```bash
+# 验证技术观点
+/crosscheck "React Server Components 是否真的比传统 SSR 更好？"
+
+# 发布已验证的内容
+/social-media-publisher "整理今天的技术发现，发布到 Twitter 和小红书"
+```
+
+### 协同矩阵
+
+| 组合 | 应用场景 |
+|------|---------|
+| Boris + CrossCheck | 架构审查、技术选型、代码审查 |
+| Boris + Social | 发布项目动态、记录学习笔记 |
+| CrossCheck + Social | 发布前验证内容准确性 |
+| **三者联动** | 趋势发现 → 验证 → 开发 → 再验证 → 发布 |
 
 ## 项目结构
 
@@ -102,15 +161,19 @@ gemini       # 登录 Google（仅首次需要）
 CC-Suite/
 ├── skills/
 │   ├── crosscheck/              # 🛡️ 多模型验证
+│   │   └── SKILL.md
 │   ├── social-publisher/        # 📢 社媒自动发布
+│   │   ├── SKILL.md
+│   │   ├── scripts/             # check_login.py, content_tracker.py
+│   │   └── codex/               # AGENTS.md, login.py
 │   └── boris-workflow/          # ⚙️⚡ Boris 工作流工具集
-│       ├── README.md
 │       ├── claude-code-setup/   # ⚙️ 环境配置
-│       └── create-subagent/     # ⚡ 子代理创建
+│       ├── create-subagent/     # ⚡ 子代理创建
+│       ├── commands/            # 7 个斜杠命令 (init, setup-ralph-loop 等)
+│       └── templates/           # 14 个模板 (agents, permissions, plugins)
 ├── scripts/
 │   └── verify.sh                # 安装验证脚本
 ├── assets/                      # 共享资源
-├── docs/                        # 文档
 └── install.sh                   # 统一安装脚本
 ```
 

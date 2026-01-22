@@ -88,13 +88,72 @@ Create specialized agents for complex tasks:
 
 ## Suite Synergy
 
-Combine skills for powerful workflows:
+CC-Suite's three parts form a powerful closed-loop system:
 
 ```
-# Workflow: Verify → Publish
-1. /crosscheck "Analysis of the latest AI trends"
-2. /social-media-publisher <verified_content> all
+┌─────────────────────────────────────────────────────────┐
+│                    SocialPublisher                       │
+│              (Output Layer - Content Distribution)       │
+└─────────────────────────────────────────────────────────┘
+                           ↑
+┌─────────────────────────────────────────────────────────┐
+│                      CrossCheck                          │
+│              (Verification Layer - Quality Assurance)    │
+└─────────────────────────────────────────────────────────┘
+                           ↑
+┌─────────────────────────────────────────────────────────┐
+│                    BorisWorkflow                         │
+│              (Foundation Layer - Environment & Tools)    │
+└─────────────────────────────────────────────────────────┘
 ```
+
+### Workflow 1: New Project Setup
+```bash
+/init                                    # Initialize Claude Code environment
+/setup-permissions --preset recommended  # Configure permissions
+/setup-plugins --preset web-dev          # Configure MCP plugins
+/create-subagent                         # Create project-specific agents
+```
+
+### Workflow 2: Autonomous Development + Verification
+```bash
+/setup-ralph-loop --enable               # Enable Ralph Loop
+
+/ralph-loop "Implement user auth with TDD, output <promise>DONE</promise> when complete" \
+  --max-iterations 30                    # Autonomous iteration
+
+/crosscheck "JWT vs Session - which is better for this use case?"  # Verify decisions
+```
+
+### Workflow 3: Trend Research → Development
+```bash
+# 1. Search trending discussions
+/social-media-publisher "Search 10 hottest AI Agent posts today, no engagement"
+
+# 2. Verify a popular claim
+/crosscheck "Is ReAct pattern really the best for AI Agents?"
+
+# 3. Develop based on verified insights
+/ralph-loop "Implement a ReAct-based AI Agent" --max-iterations 20
+```
+
+### Workflow 4: Verify → Publish
+```bash
+# Verify technical insights
+/crosscheck "Are React Server Components really better than traditional SSR?"
+
+# Publish verified content
+/social-media-publisher "Share today's tech findings to Twitter and Xiaohongshu"
+```
+
+### Synergy Matrix
+
+| Combination | Use Case |
+|-------------|----------|
+| Boris + CrossCheck | Architecture review, tech decisions, code review |
+| Boris + Social | Share project updates, document learnings |
+| CrossCheck + Social | Verify content accuracy before publishing |
+| **All Three** | Trend discovery → Verify → Develop → Re-verify → Publish |
 
 ## Project Structure
 
@@ -102,15 +161,19 @@ Combine skills for powerful workflows:
 CC-Suite/
 ├── skills/
 │   ├── crosscheck/              # 🛡️ Multi-model verification
+│   │   └── SKILL.md
 │   ├── social-publisher/        # 📢 Social media automation
+│   │   ├── SKILL.md
+│   │   ├── scripts/             # check_login.py, content_tracker.py
+│   │   └── codex/               # AGENTS.md, login.py
 │   └── boris-workflow/          # ⚙️⚡ Boris workflow tools
-│       ├── README.md
 │       ├── claude-code-setup/   # ⚙️ Environment setup
-│       └── create-subagent/     # ⚡ Subagent creation
+│       ├── create-subagent/     # ⚡ Subagent creation
+│       ├── commands/            # 7 slash commands (init, setup-ralph-loop, etc.)
+│       └── templates/           # 14 templates (agents, permissions, plugins)
 ├── scripts/
 │   └── verify.sh                # Installation verification
 ├── assets/                      # Shared resources
-├── docs/                        # Documentation
 └── install.sh                   # Unified installer
 ```
 
