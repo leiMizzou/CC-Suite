@@ -15,8 +15,14 @@
 |------|------|------|----------|
 | [CrossCheck](skills/crosscheck/) | 🛡️ | 多模型交叉验证 (Claude + Codex + Gemini) | Codex, Gemini |
 | [SocialPublisher](skills/social-publisher/) | 📢 | 社交媒体自动发布 | Playwright |
-| [ClaudeCodeSetup](skills/claude-code-setup/) | ⚙️ | Claude Code 环境配置 | - |
-| [CreateSubagent](skills/create-subagent/) | ⚡ | 子代理创建助手 | Codex |
+| [BorisWorkflow](skills/boris-workflow/) | ⚙️⚡ | Claude Code 环境工具集 | Codex |
+
+### BorisWorkflow 子技能
+
+| 技能 | 图标 | 描述 | 使用频率 |
+|------|------|------|----------|
+| [claude-code-setup](skills/boris-workflow/claude-code-setup/) | ⚙️ | 初始化开发环境 | 一次性 |
+| [create-subagent](skills/boris-workflow/create-subagent/) | ⚡ | 创建自定义 Agent | 持续使用 |
 
 ## 一键安装
 
@@ -38,6 +44,9 @@ gemini       # 登录 Google（仅首次需要）
 ```bash
 # 安装指定技能
 ./install.sh crosscheck social-publisher
+
+# 安装技能组
+./install.sh boris-workflow    # 安装 claude-code-setup + create-subagent
 
 # 安装单个技能
 ./install.sh crosscheck
@@ -88,13 +97,15 @@ gemini       # 登录 Google（仅首次需要）
 ```
 CC-Suite/
 ├── skills/
-│   ├── crosscheck/          # 🛡️ 多模型验证
-│   ├── social-publisher/    # 📢 社媒自动发布
-│   ├── claude-code-setup/   # ⚙️ 环境配置
-│   └── create-subagent/     # ⚡ 子代理创建
-├── assets/                  # 共享资源
-├── docs/                    # 文档
-└── install.sh               # 统一安装脚本
+│   ├── crosscheck/              # 🛡️ 多模型验证
+│   ├── social-publisher/        # 📢 社媒自动发布
+│   └── boris-workflow/          # ⚙️⚡ Boris 工作流工具集
+│       ├── README.md
+│       ├── claude-code-setup/   # ⚙️ 环境配置
+│       └── create-subagent/     # ⚡ 子代理创建
+├── assets/                      # 共享资源
+├── docs/                        # 文档
+└── install.sh                   # 统一安装脚本
 ```
 
 ## 验证安装

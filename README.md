@@ -15,8 +15,14 @@ A curated collection of Claude Code skills that enhance your AI workflow with **
 |-------|------|-------------|------------------|
 | [CrossCheck](skills/crosscheck/) | 🛡️ | Multi-model verification (Claude + Codex + Gemini) | Codex, Gemini |
 | [SocialPublisher](skills/social-publisher/) | 📢 | Automated social media publishing | Playwright |
-| [ClaudeCodeSetup](skills/claude-code-setup/) | ⚙️ | Claude Code environment configuration | - |
-| [CreateSubagent](skills/create-subagent/) | ⚡ | Subagent creation helper | Codex |
+| [BorisWorkflow](skills/boris-workflow/) | ⚙️⚡ | Claude Code environment tools | Codex |
+
+### BorisWorkflow Sub-Skills
+
+| Skill | Icon | Description | Usage |
+|-------|------|-------------|-------|
+| [claude-code-setup](skills/boris-workflow/claude-code-setup/) | ⚙️ | Initialize dev environment | One-time |
+| [create-subagent](skills/boris-workflow/create-subagent/) | ⚡ | Create custom agents | Ongoing |
 
 ## One-Line Install
 
@@ -38,6 +44,9 @@ Install only the skills you need:
 ```bash
 # Install specific skills
 ./install.sh crosscheck social-publisher
+
+# Install skill group
+./install.sh boris-workflow    # Installs claude-code-setup + create-subagent
 
 # Install single skill
 ./install.sh crosscheck
@@ -88,13 +97,15 @@ Combine skills for powerful workflows:
 ```
 CC-Suite/
 ├── skills/
-│   ├── crosscheck/          # 🛡️ Multi-model verification
-│   ├── social-publisher/    # 📢 Social media automation
-│   ├── claude-code-setup/   # ⚙️ Environment setup
-│   └── create-subagent/     # ⚡ Subagent creation
-├── assets/                  # Shared resources
-├── docs/                    # Documentation
-└── install.sh               # Unified installer
+│   ├── crosscheck/              # 🛡️ Multi-model verification
+│   ├── social-publisher/        # 📢 Social media automation
+│   └── boris-workflow/          # ⚙️⚡ Boris workflow tools
+│       ├── README.md
+│       ├── claude-code-setup/   # ⚙️ Environment setup
+│       └── create-subagent/     # ⚡ Subagent creation
+├── assets/                      # Shared resources
+├── docs/                        # Documentation
+└── install.sh                   # Unified installer
 ```
 
 ## Verify Installation
