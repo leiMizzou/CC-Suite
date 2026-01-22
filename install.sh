@@ -2,6 +2,7 @@
 
 # CC Suite - Claude Code Suite Installer
 # Unified installer for CrossCheck, SocialPublisher, and BorisWorkflow skills
+# Compatible with bash 3.2+ (macOS default)
 
 set -e
 
@@ -21,27 +22,12 @@ GEMINI_MCP_VERSION="0.1.8"
 SKILLS_DIR="$HOME/.claude/skills"
 CC_SUITE_DIR="$(cd "$(dirname "$0")" && pwd)"
 
-# Skill path mapping: skill -> source path (relative to skills/)
-declare -A SKILL_PATHS
-SKILL_PATHS[crosscheck]="crosscheck"
-SKILL_PATHS[social-publisher]="social-publisher"
-SKILL_PATHS[claude-code-setup]="boris-workflow/claude-code-setup"
-SKILL_PATHS[create-subagent]="boris-workflow/create-subagent"
-
-# Dependency map: skill -> required MCP servers
-declare -A SKILL_DEPS
-SKILL_DEPS[crosscheck]="codex gemini"
-SKILL_DEPS[social-publisher]="playwright"
-SKILL_DEPS[claude-code-setup]=""
-SKILL_DEPS[create-subagent]="codex"
-
-# Skill groups
-declare -A SKILL_GROUPS
-SKILL_GROUPS[boris-workflow]="claude-code-setup create-subagent"
+# All available skills
+ALL_SKILLS="crosscheck social-publisher claude-code-setup create-subagent"
 
 # Parse arguments
 FORCE=false
-SELECTED_SKILLS=()
+SELECTED_SKILLS=""
 
 print_banner() {
     echo -e "${BLUE}"
@@ -69,13 +55,13 @@ usage() {
     echo "Skills (if none specified, installs all):"
     echo ""
     echo "  Individual skills:"
-    echo "    crosscheck         🛡️  Multi-model cross verification"
-    echo "    social-publisher   📢 Social media automation"
-    echo "    claude-code-setup  ⚙️  Claude Code environment setup"
-    echo "    create-subagent    ⚡ Subagent creation helper"
+    echo "    crosscheck         Multi-model cross verification"
+    echo "    social-publisher   Social media automation"
+    echo "    claude-code-setup  Claude Code environment setup"
+    echo "    create-subagent    Subagent creation helper"
     echo ""
     echo "  Skill groups:"
-    echo "    boris-workflow     ⚙️⚡ All Boris workflow tools (claude-code-setup + create-subagent)"
+    echo "    boris-workflow     All Boris workflow tools (claude-code-setup + create-subagent)"
     echo ""
     echo "Examples:"
     echo "  $0                           # Install all skills"
@@ -83,6 +69,39 @@ usage() {
     echo "  $0 boris-workflow            # Install all Boris workflow skills"
     echo "  $0 crosscheck social-publisher  # Install selected skills"
     echo "  $0 --force                   # Reinstall everything"
+}
+
+# Get skill source path
+get_skill_path() {
+    local skill=$1
+    case $skill in
+        crosscheck)         echo "crosscheck" ;;
+        social-publisher)   echo "social-publisher" ;;
+        claude-code-setup)  echo "boris-workflow/claude-code-setup" ;;
+        create-subagent)    echo "boris-workflow/create-subagent" ;;
+        *)                  echo "" ;;
+    esac
+}
+
+# Get skill dependencies
+get_skill_deps() {
+    local skill=$1
+    case $skill in
+        crosscheck)         echo "codex gemini" ;;
+        social-publisher)   echo "playwright" ;;
+        claude-code-setup)  echo "" ;;
+        create-subagent)    echo "codex" ;;
+        *)                  echo "" ;;
+    esac
+}
+
+# Expand skill groups
+expand_skill() {
+    local skill=$1
+    case $skill in
+        boris-workflow)     echo "claude-code-setup create-subagent" ;;
+        *)                  echo "$skill" ;;
+    esac
 }
 
 check_prerequisites() {
@@ -151,7 +170,7 @@ install_mcp_server() {
 
 install_skill() {
     local skill=$1
-    local skill_path="${SKILL_PATHS[$skill]}"
+    local skill_path=$(get_skill_path "$skill")
     local skill_src="$CC_SUITE_DIR/skills/$skill_path"
     local skill_dest="$SKILLS_DIR/$skill"
 
@@ -168,7 +187,7 @@ install_skill() {
     echo -e "${BLUE}Installing skill: $skill${NC}"
 
     # Install dependencies
-    local deps="${SKILL_DEPS[$skill]}"
+    local deps=$(get_skill_deps "$skill")
     if [ -n "$deps" ]; then
         for dep in $deps; do
             install_mcp_server "$dep"
@@ -182,21 +201,6 @@ install_skill() {
     echo -e "${GREEN}✓${NC} Skill '$skill' installed to $skill_dest"
 }
 
-expand_skill_groups() {
-    local -a expanded=()
-    for skill in "$@"; do
-        if [ -n "${SKILL_GROUPS[$skill]}" ]; then
-            # It's a group, expand it
-            for sub_skill in ${SKILL_GROUPS[$skill]}; do
-                expanded+=("$sub_skill")
-            done
-        else
-            expanded+=("$skill")
-        fi
-    done
-    echo "${expanded[@]}"
-}
-
 doctor() {
     echo ""
     echo -e "${BLUE}Running system check...${NC}"
@@ -208,7 +212,7 @@ doctor() {
 
     echo ""
     echo "Installed Skills:"
-    for skill in "${!SKILL_PATHS[@]}"; do
+    for skill in $ALL_SKILLS; do
         if [ -d "$SKILLS_DIR/$skill" ]; then
             echo -e "  ${GREEN}✓${NC} $skill"
         fi
@@ -235,49 +239,43 @@ while [[ $# -gt 0 ]]; do
             exit 0
             ;;
         *)
-            SELECTED_SKILLS+=("$1")
+            SELECTED_SKILLS="$SELECTED_SKILLS $1"
             shift
             ;;
     esac
 done
 
+# Trim leading space
+SELECTED_SKILLS=$(echo "$SELECTED_SKILLS" | sed 's/^ *//')
+
 # If no skills specified, install all
-if [ ${#SELECTED_SKILLS[@]} -eq 0 ]; then
-    SELECTED_SKILLS=(crosscheck social-publisher claude-code-setup create-subagent)
+if [ -z "$SELECTED_SKILLS" ]; then
+    SELECTED_SKILLS="$ALL_SKILLS"
 fi
 
-# Expand skill groups
-EXPANDED_SKILLS=($(expand_skill_groups "${SELECTED_SKILLS[@]}"))
-
-# Remove duplicates
-declare -A SEEN
-UNIQUE_SKILLS=()
-for skill in "${EXPANDED_SKILLS[@]}"; do
-    if [ -z "${SEEN[$skill]}" ]; then
-        SEEN[$skill]=1
-        UNIQUE_SKILLS+=("$skill")
-    fi
+# Expand skill groups and remove duplicates
+EXPANDED_SKILLS=""
+for skill in $SELECTED_SKILLS; do
+    expanded=$(expand_skill "$skill")
+    for s in $expanded; do
+        # Check if already in list
+        if ! echo "$EXPANDED_SKILLS" | grep -q "\b$s\b"; then
+            EXPANDED_SKILLS="$EXPANDED_SKILLS $s"
+        fi
+    done
 done
+EXPANDED_SKILLS=$(echo "$EXPANDED_SKILLS" | sed 's/^ *//')
 
 # Main installation
 print_banner
 check_prerequisites
 
 echo ""
-echo -e "${BLUE}Installing skills: ${UNIQUE_SKILLS[*]}${NC}"
+echo -e "${BLUE}Installing skills: ${EXPANDED_SKILLS}${NC}"
 echo ""
 
-# Calculate unique dependencies
-declare -A UNIQUE_DEPS
-for skill in "${UNIQUE_SKILLS[@]}"; do
-    deps="${SKILL_DEPS[$skill]}"
-    for dep in $deps; do
-        UNIQUE_DEPS[$dep]=1
-    done
-done
-
 # Install each skill
-for skill in "${UNIQUE_SKILLS[@]}"; do
+for skill in $EXPANDED_SKILLS; do
     install_skill "$skill"
     echo ""
 done
