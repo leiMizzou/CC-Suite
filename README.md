@@ -111,39 +111,39 @@ CC-Suite's three parts form a powerful closed-loop system:
 ```bash
 /init                                    # Initialize Claude Code environment
 /setup-permissions --preset recommended  # Configure permissions
-/setup-plugins --preset web-dev          # Configure MCP plugins
-/create-subagent                         # Create project-specific agents
+/setup-plugins --preset {PRESET}         # Configure MCP plugins (web-dev, full, etc.)
+/create-subagent {AGENT_NAME}            # Create project-specific agents
 ```
 
 ### Workflow 2: Autonomous Development + Verification
 ```bash
 /setup-ralph-loop --enable               # Enable Ralph Loop
 
-/ralph-loop "Implement user auth with TDD, output <promise>DONE</promise> when complete" \
+/ralph-loop "{TASK_DESCRIPTION}, output <promise>DONE</promise> when complete" \
   --max-iterations 30                    # Autonomous iteration
 
-/crosscheck "JWT vs Session - which is better for this use case?"  # Verify decisions
+/crosscheck "{OPTION_A} vs {OPTION_B} - which is better for this use case?"
 ```
 
 ### Workflow 3: Trend Research → Development
 ```bash
 # 1. Search trending discussions
-/social-media-publisher "Search 10 hottest AI Agent posts today, no engagement"
+/social-media-publisher "Search 10 hottest {TOPIC} posts today, no engagement"
 
 # 2. Verify a popular claim
-/crosscheck "Is ReAct pattern really the best for AI Agents?"
+/crosscheck "{VERIFY_CLAIM_FROM_DISCOVERY}"
 
 # 3. Develop based on verified insights
-/ralph-loop "Implement a ReAct-based AI Agent" --max-iterations 20
+/ralph-loop "{IMPLEMENT_BASED_ON_VERIFICATION}" --max-iterations 20
 ```
 
 ### Workflow 4: Verify → Publish
 ```bash
 # Verify technical insights
-/crosscheck "Are React Server Components really better than traditional SSR?"
+/crosscheck "{TECHNICAL_QUESTION}"
 
 # Publish verified content
-/social-media-publisher "Share today's tech findings to Twitter and Xiaohongshu"
+/social-media-publisher "Share {TOPIC} findings to Twitter and Xiaohongshu"
 ```
 
 ### Synergy Matrix

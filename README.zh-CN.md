@@ -111,39 +111,39 @@ CC-Suite 三部分形成强大的闭环系统：
 ```bash
 /init                                    # 初始化 Claude Code 环境
 /setup-permissions --preset recommended  # 配置权限
-/setup-plugins --preset web-dev          # 配置 MCP 插件
-/create-subagent                         # 创建项目专用 Agent
+/setup-plugins --preset {预设}            # 配置 MCP 插件 (web-dev, full 等)
+/create-subagent {Agent名称}              # 创建项目专用 Agent
 ```
 
 ### 工作流 2：自主开发 + 验证
 ```bash
 /setup-ralph-loop --enable               # 启用 Ralph Loop
 
-/ralph-loop "用 TDD 方式实现用户认证，完成后输出 <promise>DONE</promise>" \
+/ralph-loop "{任务描述}，完成后输出 <promise>DONE</promise>" \
   --max-iterations 30                    # 自主迭代开发
 
-/crosscheck "JWT vs Session，哪个更适合这个场景？"  # 验证技术决策
+/crosscheck "{方案A} vs {方案B}，哪个更适合这个场景？"
 ```
 
 ### 工作流 3：趋势追踪 → 开发灵感
 ```bash
 # 1. 搜索热门技术讨论
-/social-media-publisher "搜索 10 个今天最热的 AI Agent 帖子，只看不互动"
+/social-media-publisher "搜索 10 个今天最热的 {主题} 帖子，只看不互动"
 
 # 2. 验证某个热门观点
-/crosscheck "ReAct 模式真的是 AI Agent 的最佳选择吗？"
+/crosscheck "{从发现阶段识别的观点}"
 
 # 3. 基于验证结果开发
-/ralph-loop "实现一个基于 ReAct 模式的 AI Agent" --max-iterations 20
+/ralph-loop "{基于验证结论的实现任务}" --max-iterations 20
 ```
 
 ### 工作流 4：验证 → 发布
 ```bash
 # 验证技术观点
-/crosscheck "React Server Components 是否真的比传统 SSR 更好？"
+/crosscheck "{技术问题}"
 
 # 发布已验证的内容
-/social-media-publisher "整理今天的技术发现，发布到 Twitter 和小红书"
+/social-media-publisher "整理 {主题} 的发现，发布到 Twitter 和小红书"
 ```
 
 ### 协同矩阵
