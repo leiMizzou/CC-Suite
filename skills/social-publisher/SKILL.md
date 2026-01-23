@@ -1,6 +1,6 @@
 ---
 name: social-media-publisher
-description: 社交媒体内容运营工具。搜索 Twitter 热门帖子、点赞回复互动、提炼核心观点、发布到多平台（Twitter Thread、小红书、微信公众号）。支持自然语言输入如"搜索 10 个今天最热的 AI 帖子，点赞并整理成小红书笔记"。
+description: 社交媒体内容运营工具。搜索 Twitter 热门帖子、点赞回复互动、提炼核心观点、发布到多平台（Twitter Thread、小红书、微信公众号）。支持图片/视频媒体生成（基于 Remotion）。支持自然语言输入如"搜索 10 个今天最热的 AI 帖子，点赞并整理成小红书笔记，配上视频"。
 ---
 
 # Social Media Publisher Skill
@@ -56,6 +56,7 @@ python3 scripts/check_login.py
 互动: <是否点赞回复，默认 是>
 平台: <twitter/xiaohongshu/wechat/all，默认 all>
 操作: <仅搜索/仅互动/仅发布/完整流程，默认 完整流程>
+媒体: <none/image/video，默认 none> # 是否生成配套媒体
 ```
 
 **解析示例：**
@@ -225,6 +226,63 @@ python3 scripts/content_tracker.py distill \
   --summary "总结内容"
 ```
 ⚠️ **必须在生成各平台内容之前执行此命令，记录提炼的核心内容。**
+
+### Step 6.5: 媒体生成 (可选)
+
+**如果用户要求配套图片或视频，使用 Remotion 生成媒体内容。**
+
+**检查 Remotion 环境：**
+```bash
+python3 scripts/media_generator.py check
+```
+
+**平台尺寸预设：**
+| 平台 | 视频尺寸 | 图片尺寸 | 备注 |
+|------|----------|----------|------|
+| Twitter | 1280x720 | 1200x675 | 横屏 16:9 |
+| 小红书 | 1080x1920 | 1080x1440 | 竖屏 9:16 / 3:4 |
+| 微信公众号 | 1920x1080 | 900x500 | 横屏 |
+
+**可用模板：**
+- `text_animation` - 文字动画（适合要点展示）
+- `data_visualization` - 数据可视化（适合趋势图表）
+- `list_countdown` - 列表倒计时（适合 Top N 榜单）
+- `product_showcase` - 产品展示（适合工具介绍）
+
+**生成媒体：**
+```bash
+# 生成视频
+python3 scripts/media_generator.py generate \
+  --platform xiaohongshu \
+  --type video \
+  --template list_countdown \
+  --duration 15 \
+  --title "AI Agent 今日热点 TOP 5" \
+  --items '["趋势1", "趋势2", "趋势3", "趋势4", "趋势5"]' \
+  --json
+
+# 生成图片
+python3 scripts/media_generator.py generate \
+  --platform twitter \
+  --type image \
+  --template text_animation \
+  --title "Claude Skill 今日要点" \
+  --subtitle "3 个核心趋势"
+```
+
+**必须执行 - 媒体生成后记录：**
+```bash
+# 记录媒体生成结果
+python3 scripts/content_tracker.py media-gen \
+  --platform xiaohongshu \
+  --type video \
+  --file "/path/to/output.mp4" \
+  --width 1080 \
+  --height 1920 \
+  --duration 15 \
+  --template list_countdown
+```
+⚠️ **每个平台生成媒体后必须执行此命令记录。**
 
 ### Step 7: 生成各平台内容
 
@@ -454,6 +512,29 @@ python3 scripts/content_tracker.py generate \
 
 **使用 Playwright MCP 发布到各平台。**
 
+**如果有媒体内容，先上传媒体再发布文字：**
+
+```
+1. 导航到发布页面
+2. 点击媒体上传按钮
+3. browser_file_upload: 媒体文件路径
+4. 等待上传完成
+5. 填写文字内容
+6. 发布
+```
+
+**必须执行 - 媒体上传后记录状态：**
+```bash
+# 媒体上传成功
+python3 scripts/content_tracker.py media-upload --platform xiaohongshu --status uploaded
+
+# 媒体上传失败
+python3 scripts/content_tracker.py media-upload --platform xiaohongshu --status failed --error "上传超时"
+
+# 跳过媒体（仅发文字）
+python3 scripts/content_tracker.py media-upload --platform twitter --status skipped
+```
+
 **必须执行 - 每个平台发布后立即记录状态：**
 ```bash
 # Twitter Thread 发布成功后
@@ -566,7 +647,9 @@ python3 scripts/content_tracker.py verify
 | 搜索 | 查询词、时间范围、所有找到的帖子 | `search --query "关键词" --posts '[...]'` |
 | 互动 | 选定的帖子、已点赞、已回复、回复内容 | `engage --action like/reply --post-id "xxx"` |
 | 提炼 | 趋势、要点、引用、总结 | `distill --trends '[...]' --points '[...]'` |
+| 媒体生成 | 平台、类型、文件路径、尺寸、时长 | `media-gen --platform xxx --type video --file "..."` |
 | 生成 | 各平台的完整内容（Twitter Thread 每条推文） | `generate --platform twitter --thread '[...]'` |
+| 媒体上传 | 平台、上传状态、错误信息 | `media-upload --platform xxx --status uploaded` |
 | 发布 | 状态、已发布数量、URL、错误信息 | `publish --platform twitter --status published` |
 | 核查 | 验证结果、未完成项、补救建议 | `verify` |
 
@@ -598,6 +681,19 @@ python3 scripts/content_tracker.py distill \
 python3 scripts/content_tracker.py generate --platform twitter --thread '["1/ ...", "2/ ..."]'
 python3 scripts/content_tracker.py generate --platform xiaohongshu --title "标题" --content "内容"
 python3 scripts/content_tracker.py generate --platform wechat --title "标题" --content "内容"
+
+# 记录媒体生成（可选）
+python3 scripts/content_tracker.py media-gen \
+  --platform xiaohongshu \
+  --type video \
+  --file "/path/to/video.mp4" \
+  --width 1080 --height 1920 \
+  --duration 15 \
+  --template list_countdown
+
+# 记录媒体上传状态（可选）
+python3 scripts/content_tracker.py media-upload --platform xiaohongshu --status uploaded
+python3 scripts/content_tracker.py media-upload --platform twitter --status skipped
 
 # 记录发布状态
 python3 scripts/content_tracker.py publish --platform twitter --status published --count 12 --url "https://..."
@@ -665,6 +761,8 @@ python3 scripts/content_tracker.py session-id        # 获取最新会话ID
 | "发小红书" / "发到小红书" | 平台=xiaohongshu |
 | "所有平台" / "全发" | 平台=all |
 | "整理一下" / "总结" / "提炼" | 包含提炼步骤 |
+| "配视频" / "做个视频" / "视频" | 媒体=video |
+| "配图" / "做图" / "图片" | 媒体=image |
 
 ---
 
@@ -697,6 +795,8 @@ python3 scripts/check_login.py --json
 | 每次互动后 | `python3 scripts/content_tracker.py engage ...` |
 | 提炼完成后 | `python3 scripts/content_tracker.py distill ...` |
 | 每平台内容生成后 | `python3 scripts/content_tracker.py generate ...` |
+| 媒体生成后 (可选) | `python3 scripts/content_tracker.py media-gen ...` |
+| 媒体上传后 (可选) | `python3 scripts/content_tracker.py media-upload ...` |
 | 每平台发布后 | `python3 scripts/content_tracker.py publish ...` |
 | 流程结束时 | `python3 scripts/content_tracker.py verify` |
 
@@ -723,3 +823,6 @@ python3 scripts/check_login.py --json
 - Playwright MCP (浏览器自动化)
 - WebSearch (补充搜索)
 - Bash (执行脚本)
+- video-producer skill (可选，用于媒体生成)
+  - 需要 Node.js 和 npx
+  - Remotion 项目位于 `~/.claude/skills/video-producer/`

@@ -77,6 +77,34 @@ class ContentTracker:
                 }
             },
 
+            # Phase 4.5: 生成的媒体内容 (图片/视频)
+            "generated_media": {
+                "twitter": {
+                    "type": "",          # image, video, none
+                    "file_path": "",
+                    "dimensions": {"width": 0, "height": 0},
+                    "duration_seconds": 0,  # 仅视频
+                    "template": "",      # Remotion 模板名
+                    "generated_at": ""
+                },
+                "xiaohongshu": {
+                    "type": "",
+                    "file_path": "",
+                    "dimensions": {"width": 0, "height": 0},
+                    "duration_seconds": 0,
+                    "template": "",
+                    "generated_at": ""
+                },
+                "wechat": {
+                    "type": "",
+                    "file_path": "",
+                    "dimensions": {"width": 0, "height": 0},
+                    "duration_seconds": 0,
+                    "template": "",
+                    "generated_at": ""
+                }
+            },
+
             # Phase 5: 发布状态
             "publish_status": {
                 "twitter": {
@@ -94,6 +122,25 @@ class ContentTracker:
                 "wechat": {
                     "status": "pending",
                     "url": "",
+                    "errors": []
+                }
+            },
+
+            # Phase 5.5: 媒体上传状态
+            "media_upload_status": {
+                "twitter": {
+                    "status": "pending",  # pending, uploaded, failed, skipped
+                    "uploaded_at": "",
+                    "errors": []
+                },
+                "xiaohongshu": {
+                    "status": "pending",
+                    "uploaded_at": "",
+                    "errors": []
+                },
+                "wechat": {
+                    "status": "pending",
+                    "uploaded_at": "",
                     "errors": []
                 }
             },
@@ -222,6 +269,49 @@ class ContentTracker:
         self._save()
         print(f"📝 已记录微信公众号内容: {title}")
 
+    # ========== Phase 4.5: 媒体生成 ==========
+
+    def record_media_generation(self, platform: str, media_type: str, file_path: str,
+                                 width: int, height: int, duration: int = 0,
+                                 template: str = ""):
+        """记录媒体生成结果"""
+        valid_platforms = list(self.data["generated_media"].keys())
+        if platform not in self.data["generated_media"]:
+            raise ValueError(f"不支持的平台: {platform}. 支持的平台: {valid_platforms}")
+
+        self.data["generated_media"][platform] = {
+            "type": media_type,  # image, video
+            "file_path": file_path,
+            "dimensions": {"width": width, "height": height},
+            "duration_seconds": duration,
+            "template": template,
+            "generated_at": datetime.now().isoformat()
+        }
+        self._save()
+        print(f"🎬 已记录 {platform} 媒体生成: {media_type} ({width}x{height})")
+
+    def record_media_upload(self, platform: str, status: str = "uploaded",
+                            error: str = None):
+        """记录媒体上传状态"""
+        valid_platforms = list(self.data["media_upload_status"].keys())
+        if platform not in self.data["media_upload_status"]:
+            raise ValueError(f"不支持的平台: {platform}. 支持的平台: {valid_platforms}")
+
+        self.data["media_upload_status"][platform]["status"] = status
+        if status == "uploaded":
+            self.data["media_upload_status"][platform]["uploaded_at"] = datetime.now().isoformat()
+        if error:
+            self.data["media_upload_status"][platform]["errors"].append(error)
+        self._save()
+        print(f"📤 已记录 {platform} 媒体上传状态: {status}")
+
+    def get_media_for_platform(self, platform: str) -> Optional[Dict]:
+        """获取平台的媒体信息"""
+        media = self.data["generated_media"].get(platform, {})
+        if media.get("type") and media.get("file_path"):
+            return media
+        return None
+
     # ========== Phase 5: 发布状态 ==========
 
     def record_twitter_publish(self, published_count: int, urls: List[str] = None,
@@ -299,6 +389,20 @@ class ContentTracker:
                     "message": f"微信公众号状态: {wechat_status['status']}"
                 })
 
+        # 检查媒体上传状态
+        for platform in ["twitter", "xiaohongshu", "wechat"]:
+            media = self.data["generated_media"].get(platform, {})
+            upload_status = self.data["media_upload_status"].get(platform, {})
+
+            # 如果生成了媒体但未上传
+            if media.get("type") and media.get("file_path"):
+                if upload_status.get("status") not in ["uploaded", "skipped"]:
+                    issues.append({
+                        "platform": platform,
+                        "type": "media_not_uploaded",
+                        "message": f"{platform} 媒体已生成但未上传: {media['type']}"
+                    })
+
         # 更新核查结果
         self.data["verification"] = {
             "verified_at": datetime.now().isoformat(),
@@ -343,6 +447,26 @@ class ContentTracker:
         report.append(f"   Twitter Thread: {generated['twitter']['total_tweets']} 条推文")
         report.append(f"   小红书: {generated['xiaohongshu']['title'] or '(无)'}")
         report.append(f"   微信公众号: {generated['wechat']['title'] or '(无)'}")
+
+        # 媒体内容
+        media = self.data.get("generated_media", {})
+        has_media = any(m.get("type") for m in media.values() if isinstance(m, dict))
+        if has_media:
+            report.append(f"\n🎬 生成媒体:")
+            for platform, m in media.items():
+                if isinstance(m, dict) and m.get("type"):
+                    dims = m.get("dimensions", {})
+                    size_str = f"{dims.get('width', 0)}x{dims.get('height', 0)}"
+                    duration_str = f", {m.get('duration_seconds', 0)}s" if m.get("duration_seconds") else ""
+                    report.append(f"   {platform}: {m['type']} ({size_str}{duration_str})")
+
+            # 媒体上传状态
+            upload = self.data.get("media_upload_status", {})
+            report.append(f"\n📤 媒体上传:")
+            for platform, u in upload.items():
+                if isinstance(u, dict) and media.get(platform, {}).get("type"):
+                    status_emoji = "✅" if u.get("status") == "uploaded" else "⏳"
+                    report.append(f"   {status_emoji} {platform}: {u.get('status', 'pending')}")
 
         # 发布状态
         publish = self.data["publish_status"]
@@ -443,6 +567,24 @@ def main():
     publish_parser.add_argument("--url", "-u", help="发布URL")
     publish_parser.add_argument("--count", "-n", type=int, help="已发布数量（Twitter用）")
     publish_parser.add_argument("--error", "-e", help="错误信息")
+
+    # media-gen 命令 - 记录媒体生成
+    media_gen_parser = subparsers.add_parser("media-gen", help="记录媒体生成结果")
+    media_gen_parser.add_argument("--session", "-s", help="会话ID，默认最新")
+    media_gen_parser.add_argument("--platform", "-p", choices=["twitter", "xiaohongshu", "wechat"], required=True)
+    media_gen_parser.add_argument("--type", "-t", choices=["image", "video"], required=True, help="媒体类型")
+    media_gen_parser.add_argument("--file", "-f", required=True, help="媒体文件路径")
+    media_gen_parser.add_argument("--width", "-W", type=int, required=True, help="宽度")
+    media_gen_parser.add_argument("--height", "-H", type=int, required=True, help="高度")
+    media_gen_parser.add_argument("--duration", "-d", type=int, default=0, help="时长（秒，仅视频）")
+    media_gen_parser.add_argument("--template", help="Remotion 模板名")
+
+    # media-upload 命令 - 记录媒体上传状态
+    media_upload_parser = subparsers.add_parser("media-upload", help="记录媒体上传状态")
+    media_upload_parser.add_argument("--session", "-s", help="会话ID，默认最新")
+    media_upload_parser.add_argument("--platform", "-p", choices=["twitter", "xiaohongshu", "wechat"], required=True)
+    media_upload_parser.add_argument("--status", choices=["pending", "uploaded", "failed", "skipped"], default="uploaded")
+    media_upload_parser.add_argument("--error", "-e", help="错误信息")
 
     # list 命令
     list_parser = subparsers.add_parser("list", help="列出所有会话")
@@ -558,6 +700,44 @@ def main():
                 error=args.error
             )
         print(f"✅ 已记录 {args.platform} 发布状态: {args.status}")
+
+    # ========== media-gen ==========
+    elif args.command == "media-gen":
+        tracker = ContentTracker.load(args.session) if args.session else ContentTracker.get_latest_session()
+        if not tracker:
+            print("❌ 未找到会话")
+            return
+
+        try:
+            tracker.record_media_generation(
+                platform=args.platform,
+                media_type=args.type,
+                file_path=args.file,
+                width=args.width,
+                height=args.height,
+                duration=args.duration,
+                template=args.template or ""
+            )
+        except ValueError as e:
+            print(f"❌ {e}")
+            return
+
+    # ========== media-upload ==========
+    elif args.command == "media-upload":
+        tracker = ContentTracker.load(args.session) if args.session else ContentTracker.get_latest_session()
+        if not tracker:
+            print("❌ 未找到会话")
+            return
+
+        try:
+            tracker.record_media_upload(
+                platform=args.platform,
+                status=args.status,
+                error=args.error
+            )
+        except ValueError as e:
+            print(f"❌ {e}")
+            return
 
     # ========== list ==========
     elif args.command == "list":

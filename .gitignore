@@ -22,3 +22,11 @@ Thumbs.db
 
 # User config
 config.json
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Social Publisher runtime data
+skills/social-publisher/.social_publisher/
