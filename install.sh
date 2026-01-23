@@ -15,7 +15,7 @@ NC='\033[0m'
 
 # Version pinning
 CODEX_VERSION="0.1"
-GEMINI_CLI_VERSION="0.1"
+GEMINI_CLI_VERSION="0.25.1"
 GEMINI_MCP_VERSION="1.1.4"
 
 # Directories

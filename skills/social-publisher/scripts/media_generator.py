@@ -134,20 +134,22 @@ def generate_video(spec: MediaSpec, content: Dict, output_name: str = None) -> M
     # 获取 Remotion 组件 ID
     composition_id = REMOTION_TEMPLATES.get(spec.template, "TextAnimation")
 
-    # 生成 props
+    # 生成 props 并写入临时文件（避免 shell 转义和长度限制问题）
     props = generate_remotion_props(spec, content)
-    props_json = json.dumps(props)
+    props_file = OUTPUT_DIR / f"props_{output_name}.json"
+    with open(props_file, "w", encoding="utf-8") as f:
+        json.dump(props, f, ensure_ascii=False)
 
     # 计算帧数
     total_frames = spec.duration_seconds * spec.fps
 
-    # 构建 Remotion 命令
+    # 构建 Remotion 命令（使用 props 文件而非命令行参数）
     cmd = [
         "npx", "remotion", "render",
         f"src/index.ts",
         composition_id,
         str(output_file),
-        "--props", props_json,
+        "--props", str(props_file),
         "--width", str(spec.width),
         "--height", str(spec.height),
         "--fps", str(spec.fps),
@@ -208,17 +210,19 @@ def generate_image(spec: MediaSpec, content: Dict, output_name: str = None) -> M
     # 获取 Remotion 组件 ID
     composition_id = REMOTION_TEMPLATES.get(spec.template, "TextAnimation")
 
-    # 生成 props
+    # 生成 props 并写入临时文件（避免 shell 转义和长度限制问题）
     props = generate_remotion_props(spec, content)
-    props_json = json.dumps(props)
+    props_file = OUTPUT_DIR / f"props_{output_name}.json"
+    with open(props_file, "w", encoding="utf-8") as f:
+        json.dump(props, f, ensure_ascii=False)
 
-    # 构建 Remotion still 命令
+    # 构建 Remotion still 命令（使用 props 文件而非命令行参数）
     cmd = [
         "npx", "remotion", "still",
         f"src/index.ts",
         composition_id,
         str(output_file),
-        "--props", props_json,
+        "--props", str(props_file),
         "--width", str(spec.width),
         "--height", str(spec.height),
         "--frame", "0"
