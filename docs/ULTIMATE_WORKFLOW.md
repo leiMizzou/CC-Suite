@@ -223,6 +223,38 @@ CrossCheck 会返回：
 > **工具**: BorisWorkflow (Ralph Loop)
 > **目标**: 基于验证结论，自主迭代开发
 
+### ⚠️ 强制检查清单（必须执行！）
+
+**在写任何代码之前，必须完成以下检查：**
+
+```bash
+# 1. 检查 Ralph Loop 是否启用
+cat ~/.claude/settings.json | grep -i ralph
+
+# 2. 如果没有启用，执行：
+/setup-ralph-loop --enable
+
+# 3. 确认启用后再继续
+```
+
+| 检查项 | 状态 |
+|--------|------|
+| Ralph Loop 已启用 | [ ] |
+| CrossCheck 结论已整理 | [ ] |
+| 验收标准已明确 | [ ] |
+
+**❌ 禁止行为：**
+- 直接使用 Edit/Write 工具手动编写代码
+- 跳过 `/ralph-loop` 命令直接开发
+- 没有明确 `<promise>DONE</promise>` 完成信号
+
+**✅ 正确行为：**
+- 使用 `/ralph-loop` 启动自主开发循环
+- 让 Ralph Loop 自动迭代直到完成
+- 通过 TDD 方式开发（先写测试）
+
+---
+
 ### 3.1 创建项目专属 Subagent（可选）
 
 ```bash

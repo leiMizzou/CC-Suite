@@ -48,3 +48,35 @@ ls ~/.claude/skills/
 - [ ] `./install.sh` installs all 4 skills
 - [ ] `./install.sh boris-workflow` installs 2 skills
 - [ ] Skills appear in `~/.claude/skills/`
+
+## Ultimate Workflow (5-Phase) Rules
+
+When executing Ultimate Workflow (docs/ULTIMATE_WORKFLOW.md):
+
+### Phase 3: DEVELOP - MANDATORY Ralph Loop
+
+**CRITICAL: Phase 3 MUST use Ralph Loop for autonomous development.**
+
+Before writing ANY code in Phase 3:
+1. Run `/setup-ralph-loop --enable` if not already enabled
+2. Use `/ralph-loop` command to start autonomous development
+3. NEVER manually write code with Edit/Write tools
+
+```bash
+# Correct way to develop in Phase 3:
+/ralph-loop "
+{Task based on CrossCheck conclusions}
+
+Requirements:
+1. ...
+2. ...
+
+Output <promise>DONE</promise> when complete
+" --completion-promise "DONE" --max-iterations 30
+```
+
+**Why Ralph Loop is mandatory:**
+- Ensures TDD-driven development
+- Self-corrects on test failures
+- Iterates until acceptance criteria met
+- Prevents manual coding shortcuts
