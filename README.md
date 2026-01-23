@@ -155,6 +155,35 @@ CC-Suite's three parts form a powerful closed-loop system:
 | CrossCheck + Social | Verify content accuracy before publishing |
 | **All Three** | Trend discovery → Verify → Develop → Re-verify → Publish |
 
+### Workflow 5: Ultimate - Full Closed Loop
+
+> **[Complete Guide: docs/ULTIMATE_WORKFLOW.md](docs/ULTIMATE_WORKFLOW.md)**
+
+```bash
+# Phase 1: DISCOVER - Find trending discussions
+/social-media-publisher "Search 15 hottest {TOPIC} posts today, no engagement"
+
+# Phase 2: VERIFY - Validate technical direction
+/crosscheck "{TECHNICAL_QUESTION_FROM_DISCOVERY}"
+
+# Phase 3: DEVELOP - Autonomous iteration with TDD
+/ralph-loop "{TASK_BASED_ON_VERIFIED_CONCLUSIONS}" \
+  --completion-promise "DONE" --max-iterations 40
+
+# Phase 4: RE-VERIFY - Validate code quality
+/crosscheck "Review this implementation for issues and best practices"
+
+# Phase 5: PUBLISH - Multi-platform distribution
+/social-media-publisher "Publish development insights to all platforms"
+```
+
+```
+   DISCOVER          VERIFY           DEVELOP         RE-VERIFY         PUBLISH
+   ─────────────────────────────────────────────────────────────────────────────
+   SocialPublisher → CrossCheck  →   Ralph Loop   →  CrossCheck   →  SocialPublisher
+   (Search trends)   (Validate)      (Build + TDD)   (Code review)    (Distribute)
+```
+
 ## Project Structure
 
 ```

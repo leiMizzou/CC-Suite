@@ -155,6 +155,35 @@ CC-Suite 三部分形成强大的闭环系统：
 | CrossCheck + Social | 发布前验证内容准确性 |
 | **三者联动** | 趋势发现 → 验证 → 开发 → 再验证 → 发布 |
 
+### 工作流 5：终极闭环
+
+> **[完整指南：docs/ULTIMATE_WORKFLOW.md](docs/ULTIMATE_WORKFLOW.md)**
+
+```bash
+# 阶段 1：发现 - 搜索热门讨论
+/social-media-publisher "搜索 15 个今天最热的 {主题} 帖子，只看不互动"
+
+# 阶段 2：验证 - 确认技术方向
+/crosscheck "{从发现阶段识别的技术问题}"
+
+# 阶段 3：开发 - TDD 自主迭代
+/ralph-loop "{基于验证结论的开发任务}" \
+  --completion-promise "DONE" --max-iterations 40
+
+# 阶段 4：再验证 - 代码质量检查
+/crosscheck "审查这个实现，有什么问题和改进建议？"
+
+# 阶段 5：发布 - 多平台分发
+/social-media-publisher "发布开发实践心得到所有平台"
+```
+
+```
+   发现            验证            开发           再验证           发布
+   ─────────────────────────────────────────────────────────────────────
+   SocialPublisher → CrossCheck  →  Ralph Loop  → CrossCheck  → SocialPublisher
+   (搜索趋势)        (验证方向)      (TDD 构建)     (代码审查)     (内容分发)
+```
+
 ## 项目结构
 
 ```
