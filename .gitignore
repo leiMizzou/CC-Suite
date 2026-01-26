@@ -30,3 +30,12 @@ __pycache__/
 
 # Social Publisher runtime data
 skills/social-publisher/.social_publisher/
+
+# Local Claude Code configuration
+.claude/*.local.md
+.claude/*.local.json
+.claude/settings/settings.local.json
+.mcp.json
+
+# Test logs (exclude analysis reports)
+logs/*_test-*.md

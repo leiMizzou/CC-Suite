@@ -26,7 +26,7 @@ CC_SUITE_DIR="$(cd "$(dirname "$0")" && pwd)"
 BORIS_DIR="$CC_SUITE_DIR/skills/boris-workflow"
 
 # All available skills
-ALL_SKILLS="crosscheck social-publisher claude-code-setup create-subagent"
+ALL_SKILLS="crosscheck social-publisher video-producer claude-code-setup create-subagent"
 
 # Boris workflow commands (installed to ~/.claude/commands/)
 BORIS_COMMANDS="init add-rule commit-push-pr setup-permissions setup-plugins setup-format-hook setup-ralph-loop"
@@ -86,6 +86,7 @@ get_skill_path() {
     case $skill in
         crosscheck)         echo "crosscheck" ;;
         social-publisher)   echo "social-publisher" ;;
+        video-producer)     echo "video-producer" ;;
         claude-code-setup)  echo "boris-workflow/claude-code-setup" ;;
         create-subagent)    echo "boris-workflow/create-subagent" ;;
         *)                  echo "" ;;
@@ -98,6 +99,7 @@ get_skill_deps() {
     case $skill in
         crosscheck)         echo "codex gemini" ;;
         social-publisher)   echo "playwright" ;;
+        video-producer)     echo "" ;;
         claude-code-setup)  echo "" ;;
         create-subagent)    echo "codex" ;;
         *)                  echo "" ;;
@@ -167,12 +169,49 @@ install_social_publisher_deps() {
             echo "  Run manually: pip install -r $requirements"
         fi
 
+        # Install Playwright browsers
+        echo -e "${BLUE}Installing Playwright browsers...${NC}"
+        if python3 -m playwright install chromium 2>/dev/null; then
+            echo -e "${GREEN}✓${NC} Playwright chromium browser installed"
+        else
+            echo -e "${YELLOW}⚠${NC} Failed to install Playwright browsers"
+            echo "  Run manually: python3 -m playwright install chromium"
+        fi
+
         # Make scripts executable
         chmod +x "$skill_dest/scripts/"*.py 2>/dev/null || true
         chmod +x "$skill_dest/scripts/"*.sh 2>/dev/null || true
         chmod +x "$skill_dest/codex/"*.sh 2>/dev/null || true
 
         echo -e "${GREEN}✓${NC} Scripts ready at: $skill_dest/scripts/"
+    fi
+}
+
+# Install video-producer Node.js dependencies
+install_video_producer_deps() {
+    local skill_dest="$SKILLS_DIR/video-producer"
+    local package_json="$skill_dest/package.json"
+
+    if [ -f "$package_json" ]; then
+        echo -e "${BLUE}Installing video-producer Node.js dependencies...${NC}"
+
+        # Check npm
+        if ! command -v npm &> /dev/null; then
+            echo -e "${YELLOW}⚠${NC} npm not found. Please install Node.js manually."
+            return 1
+        fi
+
+        # Install dependencies
+        cd "$skill_dest"
+        if npm install --silent 2>/dev/null; then
+            echo -e "${GREEN}✓${NC} Node.js dependencies installed"
+        else
+            echo -e "${YELLOW}⚠${NC} Failed to install Node.js dependencies"
+            echo "  Run manually: cd $skill_dest && npm install"
+        fi
+        cd - > /dev/null
+
+        echo -e "${GREEN}✓${NC} video-producer ready at: $skill_dest"
     fi
 }
 
@@ -372,6 +411,17 @@ doctor() {
         [ -f "$SKILLS_DIR/social-publisher/scripts/publish.sh" ] && echo -e "  ${GREEN}✓${NC} publish.sh"
     fi
 
+    # Check video-producer
+    if [ -d "$SKILLS_DIR/video-producer" ]; then
+        echo ""
+        echo "Video Producer Status:"
+        if [ -d "$SKILLS_DIR/video-producer/node_modules" ]; then
+            echo -e "  ${GREEN}✓${NC} Node.js dependencies installed"
+        else
+            echo -e "  ${YELLOW}⚠${NC} Node.js dependencies not installed"
+        fi
+    fi
+
     echo ""
     echo -e "${YELLOW}Remember to login to external services:${NC}"
     echo "  codex   # Login to OpenAI (if using crosscheck)"
@@ -447,6 +497,13 @@ fi
 if echo "$EXPANDED_SKILLS" | grep -q "social-publisher"; then
     echo ""
     install_social_publisher_deps
+    echo ""
+fi
+
+# Install video-producer dependencies if selected
+if echo "$EXPANDED_SKILLS" | grep -q "video-producer"; then
+    echo ""
+    install_video_producer_deps
     echo ""
 fi
 
