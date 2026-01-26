@@ -99,13 +99,19 @@ python3 scripts/validate-manifest.py
 ./scripts/install-hooks.sh
 ```
 
-### 📋 Skills Manifest
+### 📋 Manifest-Driven Architecture
 
-All skills are documented in `skills/manifest.json`:
-- Skill metadata and dependencies
+All skills are defined in `skills/manifest.json` as the **single source of truth**:
+- Skill metadata, paths, and dependencies
 - Command and template mappings
-- MCP server configurations
-- Single source of truth for configuration
+- MCP server configurations with version pinning
+
+The installer dynamically reads from the manifest:
+```bash
+# Manifest parser (used by install.sh)
+python3 scripts/parse-manifest.py list-skills
+python3 scripts/parse-manifest.py get-deps crosscheck
+```
 
 ## Usage Examples
 
@@ -117,6 +123,13 @@ Reduce AI hallucinations through 3-round cross-verification:
 /crosscheck Is microservices the right architecture for this project?
 /crosscheck What's the best approach for real-time collaboration?
 ```
+
+**Safe Mode** - For security-sensitive reviews:
+```
+/crosscheck --safe Review this production code for vulnerabilities
+/crosscheck --safe Analyze this authentication flow for issues
+```
+> `--safe` uses restricted Codex access: `sandbox=read-only`, `approval-policy=on-failure`
 
 ### 📢 SocialPublisher - Social Media Automation
 
@@ -237,21 +250,28 @@ CC-Suite's three parts form a powerful closed-loop system:
 ```
 CC-Suite/
 ├── skills/
-│   ├── crosscheck/              # 🛡️ Multi-model verification
+│   ├── manifest.json            # 📋 Single source of truth for all skills
+│   ├── crosscheck/              # 🛡️ Multi-model verification (--safe mode)
 │   │   └── SKILL.md
 │   ├── social-publisher/        # 📢 Social media automation
 │   │   ├── SKILL.md
-│   │   ├── scripts/             # check_login.py, content_tracker.py
+│   │   ├── scripts/             # check_login.py, content_tracker.py (atomic writes)
 │   │   └── codex/               # AGENTS.md, login.py
+│   ├── video-producer/          # 🎬 Remotion video generation
+│   │   └── SKILL.md
 │   └── boris-workflow/          # ⚙️⚡ Boris workflow tools
 │       ├── claude-code-setup/   # ⚙️ Environment setup
 │       ├── create-subagent/     # ⚡ Subagent creation
 │       ├── commands/            # 7 slash commands (init, setup-ralph-loop, etc.)
 │       └── templates/           # 14 templates (agents, permissions, plugins)
 ├── scripts/
+│   ├── parse-manifest.py        # Manifest parser for install.sh
 │   └── verify.sh                # Installation verification
-├── assets/                      # Shared resources
-└── install.sh                   # Unified installer
+├── tests/
+│   ├── unit/                    # Unit tests
+│   └── integration/             # Integration & E2E tests
+├── .github/workflows/           # CI/CD pipelines
+└── install.sh                   # Manifest-driven installer
 ```
 
 ## Verify Installation

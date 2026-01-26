@@ -70,6 +70,13 @@ gemini       # 登录 Google（仅首次需要）
 /crosscheck 实现实时协作的最佳方案是什么？
 ```
 
+**安全模式** - 用于安全敏感的代码审查：
+```
+/crosscheck --safe 审查这段生产代码的安全漏洞
+/crosscheck --safe 分析这个认证流程的潜在问题
+```
+> `--safe` 使用受限的 Codex 访问：`sandbox=read-only`，`approval-policy=on-failure`
+
 ### 📢 SocialPublisher - 社媒自动发布
 
 一键发布到多个平台：
@@ -184,26 +191,62 @@ CC-Suite 三部分形成强大的闭环系统：
    (搜索趋势)        (验证方向)      (TDD 构建)     (代码审查)     (内容分发)
 ```
 
+## 高级功能
+
+### 📋 Manifest 驱动架构
+
+所有技能定义在 `skills/manifest.json` 中作为**单一真相源**：
+- 技能元数据、路径和依赖
+- 命令和模板映射
+- MCP 服务器配置和版本锁定
+
+安装器动态读取 manifest：
+```bash
+# Manifest 解析器（供 install.sh 使用）
+python3 scripts/parse-manifest.py list-skills
+python3 scripts/parse-manifest.py get-deps crosscheck
+```
+
+### 🔒 安全安装模式
+
+```bash
+# 预览安装内容（不做任何修改）
+./install.sh --dry-run crosscheck
+
+# 安全模式：跳过所有外部依赖
+./install.sh --safe social-publisher
+
+# 仅跳过依赖安装
+./install.sh --skip-deps crosscheck
+```
+
 ## 项目结构
 
 ```
 CC-Suite/
 ├── skills/
-│   ├── crosscheck/              # 🛡️ 多模型验证
+│   ├── manifest.json            # 📋 所有技能的单一真相源
+│   ├── crosscheck/              # 🛡️ 多模型验证（支持 --safe 模式）
 │   │   └── SKILL.md
 │   ├── social-publisher/        # 📢 社媒自动发布
 │   │   ├── SKILL.md
-│   │   ├── scripts/             # check_login.py, content_tracker.py
+│   │   ├── scripts/             # check_login.py, content_tracker.py（原子写入）
 │   │   └── codex/               # AGENTS.md, login.py
+│   ├── video-producer/          # 🎬 Remotion 视频生成
+│   │   └── SKILL.md
 │   └── boris-workflow/          # ⚙️⚡ Boris 工作流工具集
 │       ├── claude-code-setup/   # ⚙️ 环境配置
 │       ├── create-subagent/     # ⚡ 子代理创建
 │       ├── commands/            # 7 个斜杠命令 (init, setup-ralph-loop 等)
 │       └── templates/           # 14 个模板 (agents, permissions, plugins)
 ├── scripts/
+│   ├── parse-manifest.py        # Manifest 解析器
 │   └── verify.sh                # 安装验证脚本
-├── assets/                      # 共享资源
-└── install.sh                   # 统一安装脚本
+├── tests/
+│   ├── unit/                    # 单元测试
+│   └── integration/             # 集成和端到端测试
+├── .github/workflows/           # CI/CD 流水线
+└── install.sh                   # Manifest 驱动的安装脚本
 ```
 
 ## 验证安装
