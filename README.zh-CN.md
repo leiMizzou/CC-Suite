@@ -82,7 +82,7 @@ gemini       # 登录 Google（仅首次需要）
 一键发布到多个平台：
 
 ```
-/social-media-publisher "今日AI热点" xiaohongshu wechat
+/social-publisher "今日AI热点" xiaohongshu wechat
 ```
 
 ### ⚡ CreateSubagent - 自定义代理构建器
@@ -135,7 +135,7 @@ CC-Suite 三部分形成强大的闭环系统：
 ### 工作流 3：趋势追踪 → 开发灵感
 ```bash
 # 1. 搜索热门技术讨论
-/social-media-publisher "搜索 10 个今天最热的 {主题} 帖子，只看不互动"
+/social-publisher "搜索 10 个今天最热的 {主题} 帖子，只看不互动"
 
 # 2. 验证某个热门观点
 /crosscheck "{从发现阶段识别的观点}"
@@ -150,7 +150,7 @@ CC-Suite 三部分形成强大的闭环系统：
 /crosscheck "{技术问题}"
 
 # 发布已验证的内容
-/social-media-publisher "整理 {主题} 的发现，发布到 Twitter 和小红书"
+/social-publisher "整理 {主题} 的发现，发布到 Twitter 和小红书"
 ```
 
 ### 协同矩阵
@@ -168,7 +168,7 @@ CC-Suite 三部分形成强大的闭环系统：
 
 ```bash
 # 阶段 1：发现 - 搜索热门讨论
-/social-media-publisher "搜索 15 个今天最热的 {主题} 帖子，只看不互动"
+/social-publisher "搜索 15 个今天最热的 {主题} 帖子，只看不互动"
 
 # 阶段 2：验证 - 确认技术方向
 /crosscheck "{从发现阶段识别的技术问题}"
@@ -181,7 +181,7 @@ CC-Suite 三部分形成强大的闭环系统：
 /crosscheck "审查这个实现，有什么问题和改进建议？"
 
 # 阶段 5：发布 - 多平台分发
-/social-media-publisher "发布开发实践心得到所有平台"
+/social-publisher "发布开发实践心得到所有平台"
 ```
 
 ```

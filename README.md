@@ -136,7 +136,7 @@ Reduce AI hallucinations through 3-round cross-verification:
 One-click publish to multiple platforms:
 
 ```
-/social-media-publisher "Today's AI highlights" xiaohongshu wechat
+/social-publisher "Today's AI highlights" xiaohongshu wechat
 ```
 
 ### ⚡ CreateSubagent - Custom Agent Builder
@@ -189,7 +189,7 @@ CC-Suite's three parts form a powerful closed-loop system:
 ### Workflow 3: Trend Research → Development
 ```bash
 # 1. Search trending discussions
-/social-media-publisher "Search 10 hottest {TOPIC} posts today, no engagement"
+/social-publisher "Search 10 hottest {TOPIC} posts today, no engagement"
 
 # 2. Verify a popular claim
 /crosscheck "{VERIFY_CLAIM_FROM_DISCOVERY}"
@@ -204,7 +204,7 @@ CC-Suite's three parts form a powerful closed-loop system:
 /crosscheck "{TECHNICAL_QUESTION}"
 
 # Publish verified content
-/social-media-publisher "Share {TOPIC} findings to Twitter and Xiaohongshu"
+/social-publisher "Share {TOPIC} findings to Twitter and Xiaohongshu"
 ```
 
 ### Synergy Matrix
@@ -222,7 +222,7 @@ CC-Suite's three parts form a powerful closed-loop system:
 
 ```bash
 # Phase 1: DISCOVER - Find trending discussions
-/social-media-publisher "Search 15 hottest {TOPIC} posts today, no engagement"
+/social-publisher "Search 15 hottest {TOPIC} posts today, no engagement"
 
 # Phase 2: VERIFY - Validate technical direction
 /crosscheck "{TECHNICAL_QUESTION_FROM_DISCOVERY}"
@@ -235,7 +235,7 @@ CC-Suite's three parts form a powerful closed-loop system:
 /crosscheck "Review this implementation for issues and best practices"
 
 # Phase 5: PUBLISH - Multi-platform distribution
-/social-media-publisher "Publish development insights to all platforms"
+/social-publisher "Publish development insights to all platforms"
 ```
 
 ```
