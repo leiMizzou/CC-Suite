@@ -312,11 +312,29 @@ install_video_producer_deps() {
 check_prerequisites() {
     echo -e "${BLUE}Checking prerequisites...${NC}"
 
-    # Check Claude Code CLI
+    # Check Claude Code CLI (also check common install paths if not in PATH)
     if ! command -v claude &> /dev/null; then
-        echo -e "${RED}Error: Claude Code CLI is required but not installed.${NC}"
-        echo "Install it from: https://claude.ai/code"
-        exit 1
+        # Try common installation paths
+        local claude_paths=(
+            "$HOME/.local/bin/claude"
+            "$HOME/.claude/bin/claude"
+            "/usr/local/bin/claude"
+        )
+        local found_claude=""
+        for path in "${claude_paths[@]}"; do
+            if [ -x "$path" ]; then
+                found_claude="$path"
+                export PATH="$(dirname "$path"):$PATH"
+                echo -e "${YELLOW}Note: Added $(dirname "$path") to PATH${NC}"
+                break
+            fi
+        done
+
+        if [ -z "$found_claude" ]; then
+            echo -e "${RED}Error: Claude Code CLI is required but not installed.${NC}"
+            echo "Install it from: https://claude.ai/code"
+            exit 1
+        fi
     fi
     echo -e "${GREEN}✓${NC} Claude Code CLI found"
 
