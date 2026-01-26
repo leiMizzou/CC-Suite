@@ -31,8 +31,11 @@ ALL_SKILLS="crosscheck social-publisher video-producer claude-code-setup create-
 # Boris workflow commands (installed to ~/.claude/commands/)
 BORIS_COMMANDS="init add-rule commit-push-pr setup-permissions setup-plugins setup-format-hook setup-ralph-loop"
 
-# Parse arguments
+# Global flags
 FORCE=false
+DRY_RUN=false
+SAFE_MODE=false
+SKIP_DEPS=false
 SELECTED_SKILLS=""
 
 print_banner() {
@@ -55,14 +58,18 @@ usage() {
     echo "Usage: $0 [OPTIONS] [SKILLS...]"
     echo ""
     echo "Options:"
-    echo "  --force       Force reinstall CLIs even if already installed"
-    echo "  --help        Show this help message"
+    echo "  --force         Force reinstall CLIs even if already installed"
+    echo "  --dry-run       Preview what would be installed without making changes"
+    echo "  --safe          Safe mode: skip external dependencies (MCP, npm, pip)"
+    echo "  --skip-deps     Skip dependency installation (MCP servers, packages)"
+    echo "  --help, -h      Show this help message"
     echo ""
     echo "Skills (if none specified, installs all):"
     echo ""
     echo "  Individual skills:"
     echo "    crosscheck         Multi-model cross verification"
     echo "    social-publisher   Social media automation"
+    echo "    video-producer     Remotion video generation"
     echo "    claude-code-setup  Claude Code environment setup"
     echo "    create-subagent    Subagent creation helper"
     echo ""
@@ -73,11 +80,13 @@ usage() {
     echo "                       - Templates: agents, permissions, plugins presets"
     echo ""
     echo "Examples:"
-    echo "  $0                           # Install all skills"
-    echo "  $0 crosscheck                # Install only crosscheck"
-    echo "  $0 boris-workflow            # Install all Boris workflow skills"
+    echo "  $0                              # Install all skills"
+    echo "  $0 --dry-run                    # Preview installation"
+    echo "  $0 --safe                       # Install without dependencies"
+    echo "  $0 crosscheck                   # Install only crosscheck"
+    echo "  $0 boris-workflow               # Install all Boris workflow skills"
     echo "  $0 crosscheck social-publisher  # Install selected skills"
-    echo "  $0 --force                   # Reinstall everything"
+    echo "  $0 --force                      # Reinstall everything"
 }
 
 # Get skill source path
@@ -119,6 +128,16 @@ expand_skill() {
 install_boris_commands() {
     echo -e "${BLUE}Installing Boris workflow commands...${NC}"
 
+    if $DRY_RUN; then
+        for cmd in $BORIS_COMMANDS; do
+            local src="$BORIS_DIR/commands/${cmd}.md"
+            if [ -f "$src" ]; then
+                echo -e "  ${YELLOW}[DRY RUN] Would install: /$cmd${NC}"
+            fi
+        done
+        return 0
+    fi
+
     mkdir -p "$COMMANDS_DIR"
 
     for cmd in $BORIS_COMMANDS; do
@@ -133,6 +152,15 @@ install_boris_commands() {
 # Install Boris workflow templates
 install_boris_templates() {
     echo -e "${BLUE}Installing Boris workflow templates...${NC}"
+
+    if $DRY_RUN; then
+        echo -e "  ${YELLOW}[DRY RUN] Would install: CLAUDE.md template${NC}"
+        echo -e "  ${YELLOW}[DRY RUN] Would install: settings.json template${NC}"
+        echo -e "  ${YELLOW}[DRY RUN] Would install: agents/ (4 templates)${NC}"
+        echo -e "  ${YELLOW}[DRY RUN] Would install: permissions/ (3 presets)${NC}"
+        echo -e "  ${YELLOW}[DRY RUN] Would install: plugins/ (5 presets)${NC}"
+        return 0
+    fi
 
     mkdir -p "$TEMPLATES_DIR"
 
@@ -151,9 +179,22 @@ install_boris_templates() {
 install_social_publisher_deps() {
     local skill_dest="$SKILLS_DIR/social-publisher"
     local requirements="$skill_dest/requirements.txt"
+    local venv_dir="$skill_dest/venv"
 
     if [ -f "$requirements" ]; then
         echo -e "${BLUE}Installing social-publisher Python dependencies...${NC}"
+
+        if $DRY_RUN; then
+            echo -e "${YELLOW}  [DRY RUN] Would create venv at: $venv_dir${NC}"
+            echo -e "${YELLOW}  [DRY RUN] Would install: $requirements${NC}"
+            echo -e "${YELLOW}  [DRY RUN] Would install Playwright chromium browser${NC}"
+            return 0
+        fi
+
+        if $SKIP_DEPS; then
+            echo -e "${YELLOW}  Skipping Python dependencies (--skip-deps or --safe mode)${NC}"
+            return 0
+        fi
 
         # Check Python3
         if ! command -v python3 &> /dev/null; then
@@ -161,21 +202,60 @@ install_social_publisher_deps() {
             return 1
         fi
 
+        # Create virtual environment
+        if [ ! -d "$venv_dir" ]; then
+            echo -e "${BLUE}Creating Python virtual environment...${NC}"
+            if python3 -m venv "$venv_dir" 2>/dev/null; then
+                echo -e "${GREEN}✓${NC} Virtual environment created at: $venv_dir"
+            else
+                echo -e "${YELLOW}⚠${NC} Failed to create venv, using global pip"
+                venv_dir=""
+            fi
+        else
+            echo -e "${GREEN}✓${NC} Virtual environment already exists"
+        fi
+
+        # Determine pip command
+        local pip_cmd="python3 -m pip"
+        if [ -n "$venv_dir" ]; then
+            pip_cmd="$venv_dir/bin/pip"
+        fi
+
         # Install requirements
-        if python3 -m pip install -r "$requirements" --quiet 2>/dev/null; then
+        if $pip_cmd install -r "$requirements" --quiet 2>/dev/null; then
             echo -e "${GREEN}✓${NC} Python dependencies installed"
         else
             echo -e "${YELLOW}⚠${NC} Failed to install Python dependencies"
-            echo "  Run manually: pip install -r $requirements"
+            echo "  Run manually: $pip_cmd install -r $requirements"
         fi
 
         # Install Playwright browsers
         echo -e "${BLUE}Installing Playwright browsers...${NC}"
-        if python3 -m playwright install chromium 2>/dev/null; then
+        local playwright_cmd="python3 -m playwright"
+        if [ -n "$venv_dir" ]; then
+            playwright_cmd="$venv_dir/bin/python -m playwright"
+        fi
+
+        if $playwright_cmd install chromium 2>/dev/null; then
             echo -e "${GREEN}✓${NC} Playwright chromium browser installed"
         else
             echo -e "${YELLOW}⚠${NC} Failed to install Playwright browsers"
-            echo "  Run manually: python3 -m playwright install chromium"
+            echo "  Run manually: $playwright_cmd install chromium"
+        fi
+
+        # Create activation helper script
+        if [ -n "$venv_dir" ]; then
+            cat > "$skill_dest/activate.sh" <<'EOF'
+#!/bin/bash
+# Activate social-publisher virtual environment
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/venv/bin/activate"
+echo "✓ social-publisher venv activated"
+echo "  Python: $(which python)"
+echo "  To deactivate: deactivate"
+EOF
+            chmod +x "$skill_dest/activate.sh"
+            echo -e "${GREEN}✓${NC} Activation script: $skill_dest/activate.sh"
         fi
 
         # Make scripts executable
@@ -184,6 +264,10 @@ install_social_publisher_deps() {
         chmod +x "$skill_dest/codex/"*.sh 2>/dev/null || true
 
         echo -e "${GREEN}✓${NC} Scripts ready at: $skill_dest/scripts/"
+        if [ -n "$venv_dir" ]; then
+            echo -e "${BLUE}Note:${NC} To use scripts, activate venv first:"
+            echo "  source $skill_dest/activate.sh"
+        fi
     fi
 }
 
@@ -194,6 +278,16 @@ install_video_producer_deps() {
 
     if [ -f "$package_json" ]; then
         echo -e "${BLUE}Installing video-producer Node.js dependencies...${NC}"
+
+        if $DRY_RUN; then
+            echo -e "${YELLOW}  [DRY RUN] Would run: npm install in $skill_dest${NC}"
+            return 0
+        fi
+
+        if $SKIP_DEPS; then
+            echo -e "${YELLOW}  Skipping Node.js dependencies (--skip-deps or --safe mode)${NC}"
+            return 0
+        fi
 
         # Check npm
         if ! command -v npm &> /dev/null; then
@@ -236,6 +330,11 @@ check_prerequisites() {
 
 install_mcp_server() {
     local server=$1
+
+    if $DRY_RUN; then
+        echo -e "${YELLOW}  [DRY RUN] Would install MCP server: $server${NC}"
+        return 0
+    fi
 
     case $server in
         codex)
@@ -298,18 +397,25 @@ install_skill() {
     echo -e "${BLUE}Installing skill: $skill${NC}"
 
     # Install dependencies
-    local deps=$(get_skill_deps "$skill")
-    if [ -n "$deps" ]; then
-        for dep in $deps; do
-            install_mcp_server "$dep"
-        done
+    if ! $SKIP_DEPS; then
+        local deps=$(get_skill_deps "$skill")
+        if [ -n "$deps" ]; then
+            for dep in $deps; do
+                install_mcp_server "$dep"
+            done
+        fi
+    else
+        echo -e "${YELLOW}  Skipping dependencies (--skip-deps or --safe mode)${NC}"
     fi
 
     # Copy skill files
-    mkdir -p "$skill_dest"
-    cp -r "$skill_src"/* "$skill_dest"/
-
-    echo -e "${GREEN}✓${NC} Skill '$skill' installed to $skill_dest"
+    if $DRY_RUN; then
+        echo -e "${YELLOW}  [DRY RUN] Would copy: $skill_src -> $skill_dest${NC}"
+    else
+        mkdir -p "$skill_dest"
+        cp -r "$skill_src"/* "$skill_dest"/
+        echo -e "${GREEN}✓${NC} Skill '$skill' installed to $skill_dest"
+    fi
 }
 
 verify_mcp_tools() {
@@ -409,6 +515,14 @@ doctor() {
         [ -f "$SKILLS_DIR/social-publisher/scripts/check_login.py" ] && echo -e "  ${GREEN}✓${NC} check_login.py"
         [ -f "$SKILLS_DIR/social-publisher/scripts/content_tracker.py" ] && echo -e "  ${GREEN}✓${NC} content_tracker.py"
         [ -f "$SKILLS_DIR/social-publisher/scripts/publish.sh" ] && echo -e "  ${GREEN}✓${NC} publish.sh"
+
+        # Check venv
+        if [ -d "$SKILLS_DIR/social-publisher/venv" ]; then
+            echo -e "  ${GREEN}✓${NC} Python venv (isolated environment)"
+            echo "    Activate: source $SKILLS_DIR/social-publisher/activate.sh"
+        else
+            echo -e "  ${YELLOW}⚠${NC} No venv (using global Python)"
+        fi
     fi
 
     # Check video-producer
@@ -436,6 +550,19 @@ while [[ $# -gt 0 ]]; do
     case $1 in
         --force)
             FORCE=true
+            shift
+            ;;
+        --dry-run)
+            DRY_RUN=true
+            shift
+            ;;
+        --safe)
+            SAFE_MODE=true
+            SKIP_DEPS=true
+            shift
+            ;;
+        --skip-deps)
+            SKIP_DEPS=true
             shift
             ;;
         --help|-h)
@@ -472,6 +599,33 @@ EXPANDED_SKILLS=$(echo "$EXPANDED_SKILLS" | sed 's/^ *//')
 
 # Main installation
 print_banner
+
+# Show mode information
+if $DRY_RUN; then
+    echo -e "${YELLOW}"
+    echo "========================================"
+    echo "         DRY RUN MODE (Preview)"
+    echo "========================================"
+    echo "No changes will be made to your system"
+    echo -e "${NC}"
+fi
+
+if $SAFE_MODE; then
+    echo -e "${YELLOW}"
+    echo "========================================"
+    echo "         SAFE MODE (No Dependencies)"
+    echo "========================================"
+    echo "Skills will be installed without:"
+    echo "  - MCP server installation"
+    echo "  - npm package installation"
+    echo "  - pip package installation"
+    echo -e "${NC}"
+elif $SKIP_DEPS; then
+    echo -e "${YELLOW}"
+    echo "Skipping all dependency installation"
+    echo -e "${NC}"
+fi
+
 check_prerequisites
 
 echo ""
@@ -508,6 +662,17 @@ if echo "$EXPANDED_SKILLS" | grep -q "video-producer"; then
 fi
 
 # Run doctor
-doctor
+if ! $DRY_RUN; then
+    doctor
+fi
 
-echo -e "${GREEN}Installation complete!${NC}"
+if $DRY_RUN; then
+    echo ""
+    echo -e "${YELLOW}========================================"
+    echo "         DRY RUN COMPLETE"
+    echo "========================================${NC}"
+    echo "No changes were made."
+    echo "Run without --dry-run to actually install."
+else
+    echo -e "${GREEN}Installation complete!${NC}"
+fi

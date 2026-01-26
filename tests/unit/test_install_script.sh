@@ -86,7 +86,7 @@ fi
 # Test 6: Check Playwright browser installation
 echo -e "\n${YELLOW}Test 6: Check Playwright browser installation${NC}"
 
-if grep -q "playwright install" "$INSTALL_SCRIPT"; then
+if grep -q "playwright.*install chromium\|playwright install" "$INSTALL_SCRIPT"; then
     echo -e "${GREEN}PASS: Playwright browser installation included${NC}"
 else
     echo -e "${RED}FAIL: Playwright browser installation missing${NC}"

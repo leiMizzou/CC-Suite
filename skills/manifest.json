@@ -1,0 +1,166 @@
+{
+  "version": "1.0.0",
+  "skills": {
+    "crosscheck": {
+      "name": "crosscheck",
+      "displayName": "CrossCheck - Multi-Model Verification",
+      "description": "Cross-check answers from Claude, Codex, and Gemini through 3-round verification",
+      "path": "crosscheck",
+      "type": "skill",
+      "dependencies": {
+        "mcp": ["codex", "gemini"],
+        "npm": [],
+        "pip": []
+      },
+      "files": ["SKILL.md"],
+      "commands": [],
+      "templates": []
+    },
+    "social-publisher": {
+      "name": "social-publisher",
+      "displayName": "Social Publisher - Social Media Automation",
+      "description": "Social media content search, interaction, generation, and publishing automation",
+      "path": "social-publisher",
+      "type": "skill",
+      "dependencies": {
+        "mcp": ["playwright"],
+        "npm": [],
+        "pip": ["requirements.txt"],
+        "browsers": ["chromium"]
+      },
+      "files": ["SKILL.md", "scripts/", "codex/"],
+      "commands": [],
+      "templates": [],
+      "postInstall": "install_social_publisher_deps"
+    },
+    "video-producer": {
+      "name": "video-producer",
+      "displayName": "Video Producer - Remotion Video Generation",
+      "description": "Generate videos using code with Remotion and React",
+      "path": "video-producer",
+      "type": "skill",
+      "dependencies": {
+        "mcp": [],
+        "npm": ["package.json"],
+        "pip": []
+      },
+      "files": ["SKILL.md", "src/", "public/", "package.json", "remotion.config.ts"],
+      "commands": [],
+      "templates": [],
+      "postInstall": "install_video_producer_deps"
+    },
+    "claude-code-setup": {
+      "name": "claude-code-setup",
+      "displayName": "Claude Code Setup - Development Environment",
+      "description": "Standardized development environment setup with TypeScript, bun, and git hooks",
+      "path": "boris-workflow/claude-code-setup",
+      "type": "skill",
+      "group": "boris-workflow",
+      "dependencies": {
+        "mcp": [],
+        "npm": [],
+        "pip": []
+      },
+      "files": ["SKILL.md"],
+      "commands": [
+        "init",
+        "setup-permissions",
+        "setup-plugins",
+        "setup-format-hook",
+        "setup-ralph-loop"
+      ],
+      "templates": [
+        "CLAUDE.md",
+        "settings.json",
+        "agents/",
+        "permissions/",
+        "plugins/"
+      ]
+    },
+    "create-subagent": {
+      "name": "create-subagent",
+      "displayName": "Create Subagent - Agent Generator",
+      "description": "Generate specialized Claude Code subagents for specific tasks",
+      "path": "boris-workflow/create-subagent",
+      "type": "skill",
+      "group": "boris-workflow",
+      "dependencies": {
+        "mcp": ["codex"],
+        "npm": [],
+        "pip": []
+      },
+      "files": ["SKILL.md"],
+      "commands": [],
+      "templates": []
+    }
+  },
+  "groups": {
+    "boris-workflow": {
+      "name": "boris-workflow",
+      "displayName": "Boris Workflow - Complete Dev Environment",
+      "description": "Complete Boris workflow including skills, commands, and templates",
+      "skills": ["claude-code-setup", "create-subagent"],
+      "installCommands": true,
+      "installTemplates": true
+    }
+  },
+  "commands": {
+    "init": {
+      "file": "boris-workflow/commands/init.md",
+      "description": "Initialize new project with CLAUDE.md and settings.json"
+    },
+    "add-rule": {
+      "file": "boris-workflow/commands/add-rule.md",
+      "description": "Add hookify rule to prevent unwanted behaviors"
+    },
+    "commit-push-pr": {
+      "file": "boris-workflow/commands/commit-push-pr.md",
+      "description": "Commit, push, and open PR in one command"
+    },
+    "setup-permissions": {
+      "file": "boris-workflow/commands/setup-permissions.md",
+      "description": "Configure Claude Code permissions"
+    },
+    "setup-plugins": {
+      "file": "boris-workflow/commands/setup-plugins.md",
+      "description": "Configure MCP plugins"
+    },
+    "setup-format-hook": {
+      "file": "boris-workflow/commands/setup-format-hook.md",
+      "description": "Setup automatic code formatting hook"
+    },
+    "setup-ralph-loop": {
+      "file": "boris-workflow/commands/setup-ralph-loop.md",
+      "description": "Enable Ralph Loop for autonomous development"
+    }
+  },
+  "mcpServers": {
+    "codex": {
+      "name": "codex",
+      "package": "@openai/codex",
+      "version": "0.1",
+      "type": "npm",
+      "globalInstall": true,
+      "mcpCommand": "codex mcp-server",
+      "verifyCommand": "codex",
+      "loginRequired": true
+    },
+    "gemini": {
+      "name": "gemini",
+      "cliPackage": "@google/gemini-cli",
+      "cliVersion": "0.25.1",
+      "mcpPackage": "gemini-mcp-tool",
+      "mcpVersion": "1.1.4",
+      "type": "npm",
+      "globalInstall": true,
+      "mcpCommand": "npx -y gemini-mcp-tool@1.1.4",
+      "verifyCommand": "gemini",
+      "loginRequired": true
+    },
+    "playwright": {
+      "name": "playwright",
+      "type": "builtin",
+      "description": "Playwright MCP typically available via Claude Code"
+    }
+  }
+}
