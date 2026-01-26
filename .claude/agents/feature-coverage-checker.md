@@ -1,3 +1,7 @@
+---
+name: feature-coverage-checker
+---
+
 # Feature Coverage Checker Agent
 
 ## Goal

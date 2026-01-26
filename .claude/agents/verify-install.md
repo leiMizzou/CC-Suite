@@ -1,3 +1,7 @@
+---
+name: verify-install
+---
+
 # Verify Install Agent
 
 ## Goal
