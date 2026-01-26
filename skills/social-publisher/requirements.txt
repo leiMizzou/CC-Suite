@@ -1,1 +1,5 @@
-playwright>=1.40.0
+# Social Publisher Dependencies
+# Pin versions for reproducibility
+# Last updated: 2026-01-26
+
+playwright==1.50.0

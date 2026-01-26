@@ -1,26 +1,26 @@
 ---
-name: social-media-publisher
+name: social-publisher
 description: 社交媒体内容运营工具。搜索 Twitter 热门帖子、点赞回复互动、提炼核心观点、发布到多平台（Twitter Thread、小红书、微信公众号）。支持图片/视频媒体生成（基于 Remotion）。支持自然语言输入如"搜索 10 个今天最热的 AI 帖子，点赞并整理成小红书笔记，配上视频"。
 ---
 
-# Social Media Publisher Skill
+# Social Publisher Skill
 
 ## Usage
 ```
-/social-media-publisher <自然语言描述你的需求>
+/social-publisher <自然语言描述你的需求>
 ```
 
 ## Examples
 ```
-/social-media-publisher 搜索 10 个今天最热的 Claude Skill 帖子，点赞并回复，然后整理成 Twitter 串和小红书笔记
+/social-publisher 搜索 10 个今天最热的 Claude Skill 帖子，点赞并回复，然后整理成 Twitter 串和小红书笔记
 
-/social-media-publisher 找 5 个最有价值的 AI Agent 讨论，只看不互动，整理成微信公众号文章
+/social-publisher 找 5 个最有价值的 AI Agent 讨论，只看不互动，整理成微信公众号文章
 
-/social-media-publisher 搜索 20 个关于 LLM 的帖子，按评论数排序，提炼观点发到所有平台
+/social-publisher 搜索 20 个关于 LLM 的帖子，按评论数排序，提炼观点发到所有平台
 
-/social-media-publisher 看看今天 Cursor 相关有什么热门讨论
+/social-publisher 看看今天 Cursor 相关有什么热门讨论
 
-/social-media-publisher 帮我写一篇关于 React 19 的小红书笔记，基于 Twitter 上的热门讨论
+/social-publisher 帮我写一篇关于 React 19 的小红书笔记，基于 Twitter 上的热门讨论
 ```
 
 ---

@@ -26,11 +26,35 @@ FAILED_TESTS=0
 # Run unit tests
 echo -e "\n${YELLOW}Running Unit Tests...${NC}\n"
 
+# Test 1: Install script
+echo -e "${BLUE}[1/3] Install Script Tests${NC}"
 if bash "$SCRIPT_DIR/unit/test_install_script.sh"; then
-    echo -e "${GREEN}Unit tests: PASSED${NC}"
+    echo -e "${GREEN}Install script tests: PASSED${NC}"
     ((PASSED_TESTS++))
 else
-    echo -e "${RED}Unit tests: FAILED${NC}"
+    echo -e "${RED}Install script tests: FAILED${NC}"
+    ((FAILED_TESTS++))
+fi
+((TOTAL_TESTS++))
+
+# Test 2: Social Publisher
+echo -e "\n${BLUE}[2/3] Social Publisher Tests${NC}"
+if bash "$SCRIPT_DIR/unit/test_social_publisher.sh"; then
+    echo -e "${GREEN}Social publisher tests: PASSED${NC}"
+    ((PASSED_TESTS++))
+else
+    echo -e "${RED}Social publisher tests: FAILED${NC}"
+    ((FAILED_TESTS++))
+fi
+((TOTAL_TESTS++))
+
+# Test 3: Video Producer
+echo -e "\n${BLUE}[3/3] Video Producer Tests${NC}"
+if bash "$SCRIPT_DIR/unit/test_video_producer.sh"; then
+    echo -e "${GREEN}Video producer tests: PASSED${NC}"
+    ((PASSED_TESTS++))
+else
+    echo -e "${RED}Video producer tests: FAILED${NC}"
     ((FAILED_TESTS++))
 fi
 ((TOTAL_TESTS++))

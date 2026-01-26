@@ -12,16 +12,21 @@ Cross-check answers from Claude, Codex, and Gemini through a 3-round verificatio
 
 CrossCheck supports two security modes for Codex MCP calls:
 
+> **SECURITY WARNING**: Default mode grants full code execution access to Codex.
+> For production code review or untrusted environments, always use `--safe` flag.
+
 ### Default Mode (Full Access)
 - **sandbox**: `danger-full-access` - Codex can execute any code
 - **approval-policy**: `never` - No manual approval required
 - **Use case**: Trusted environments, personal projects, speed-critical tasks
+- **Risk level**: HIGH - Use only in trusted, isolated environments
 
-### Safe Mode (`--safe` flag)
+### Safe Mode (`--safe` flag) - RECOMMENDED for production
 When the user includes `--safe` in the command, use restricted settings:
 - **sandbox**: `read-only` - Codex can only read files, no writes
 - **approval-policy**: `on-failure` - Require approval if commands fail
 - **Use case**: Shared environments, production code review, security-sensitive tasks
+- **Risk level**: LOW - Recommended for most use cases
 
 **Detection**: If the question/command contains `--safe`, strip it from the question and enable safe mode for all Codex calls.
 
