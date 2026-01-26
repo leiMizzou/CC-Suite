@@ -6,7 +6,7 @@ Validate skills/manifest.json structure and content
 import json
 import sys
 from pathlib import Path
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Tuple
 
 # Colors
 GREEN = '\033[0;32m'
@@ -14,7 +14,7 @@ RED = '\033[0;31m'
 YELLOW = '\033[1;33m'
 NC = '\033[0m'
 
-def validate_manifest(manifest_path: Path) -> tuple[bool, List[str]]:
+def validate_manifest(manifest_path: Path) -> Tuple[bool, List[str]]:
     """Validate manifest.json structure and content"""
     errors = []
     warnings = []

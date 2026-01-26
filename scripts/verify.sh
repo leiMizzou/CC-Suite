@@ -124,6 +124,7 @@ coverage_pass=true
 for skill_path in \
     "skills/crosscheck/SKILL.md" \
     "skills/social-publisher/SKILL.md" \
+    "skills/video-producer/SKILL.md" \
     "skills/boris-workflow/claude-code-setup/SKILL.md" \
     "skills/boris-workflow/create-subagent/SKILL.md"; do
 

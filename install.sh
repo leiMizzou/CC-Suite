@@ -383,38 +383,87 @@ install_video_producer_deps() {
 check_prerequisites() {
     echo -e "${BLUE}Checking prerequisites...${NC}"
 
-    # Check Claude Code CLI (also check common install paths if not in PATH)
-    if ! command -v claude &> /dev/null; then
-        # Try common installation paths
-        local claude_paths=(
-            "$HOME/.local/bin/claude"
-            "$HOME/.claude/bin/claude"
-            "/usr/local/bin/claude"
-        )
-        local found_claude=""
-        for path in "${claude_paths[@]}"; do
-            if [ -x "$path" ]; then
-                found_claude="$path"
-                export PATH="$(dirname "$path"):$PATH"
-                echo -e "${YELLOW}Note: Added $(dirname "$path") to PATH${NC}"
-                break
-            fi
-        done
+    local needs_claude=false
+    local needs_npm=false
+    local needs_python=false
 
-        if [ -z "$found_claude" ]; then
-            echo -e "${RED}Error: Claude Code CLI is required but not installed.${NC}"
-            echo "Install it from: https://claude.ai/code"
-            exit 1
-        fi
+    if ! $SKIP_DEPS; then
+        for skill in $EXPANDED_SKILLS; do
+            case $skill in
+                crosscheck|create-subagent)
+                    needs_claude=true
+                    needs_npm=true
+                    ;;
+                video-producer)
+                    needs_npm=true
+                    ;;
+                social-publisher)
+                    needs_python=true
+                    ;;
+            esac
+        done
     fi
-    echo -e "${GREEN}✓${NC} Claude Code CLI found"
+
+    if $DRY_RUN || $SKIP_DEPS; then
+        echo -e "${YELLOW}Skipping prerequisite enforcement (no dependency installation).${NC}"
+
+        if $needs_claude && ! command -v claude &> /dev/null; then
+            echo -e "${YELLOW}⚠${NC} Claude Code CLI not found (required for full install)."
+        fi
+        if $needs_npm && ! command -v npm &> /dev/null; then
+            echo -e "${YELLOW}⚠${NC} Node.js/npm not found (required for full install)."
+        fi
+        if $needs_python && ! command -v python3 &> /dev/null; then
+            echo -e "${YELLOW}⚠${NC} Python3 not found (required for social-publisher deps)."
+        fi
+        return 0
+    fi
+
+    # Check Claude Code CLI (also check common install paths if not in PATH)
+    if $needs_claude; then
+        if ! command -v claude &> /dev/null; then
+            # Try common installation paths
+            local claude_paths=(
+                "$HOME/.local/bin/claude"
+                "$HOME/.claude/bin/claude"
+                "/usr/local/bin/claude"
+            )
+            local found_claude=""
+            for path in "${claude_paths[@]}"; do
+                if [ -x "$path" ]; then
+                    found_claude="$path"
+                    export PATH="$(dirname "$path"):$PATH"
+                    echo -e "${YELLOW}Note: Added $(dirname "$path") to PATH${NC}"
+                    break
+                fi
+            done
+
+            if [ -z "$found_claude" ]; then
+                echo -e "${RED}Error: Claude Code CLI is required but not installed.${NC}"
+                echo "Install it from: https://claude.ai/code"
+                exit 1
+            fi
+        fi
+        echo -e "${GREEN}✓${NC} Claude Code CLI found"
+    fi
 
     # Check Node.js
-    if ! command -v npm &> /dev/null; then
-        echo -e "${RED}Error: Node.js/npm is required but not installed.${NC}"
-        exit 1
+    if $needs_npm; then
+        if ! command -v npm &> /dev/null; then
+            echo -e "${RED}Error: Node.js/npm is required but not installed.${NC}"
+            exit 1
+        fi
+        echo -e "${GREEN}✓${NC} Node.js/npm found"
     fi
-    echo -e "${GREEN}✓${NC} Node.js/npm found"
+
+    # Check Python3
+    if $needs_python; then
+        if ! command -v python3 &> /dev/null; then
+            echo -e "${RED}Error: Python3 is required but not installed.${NC}"
+            exit 1
+        fi
+        echo -e "${GREEN}✓${NC} Python3 found"
+    fi
 }
 
 install_mcp_server() {

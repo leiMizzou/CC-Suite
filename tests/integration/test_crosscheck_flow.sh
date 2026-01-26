@@ -90,7 +90,11 @@ echo -e "${GREEN}PASS: Sufficient models for verification${NC}"
 echo -e "\n${YELLOW}Test 4: Verify logging directory${NC}"
 
 mkdir -p "$LOGS_DIR"
-TEST_LOG="$LOGS_DIR/$(date +%Y%m%d)_test-question.md"
+TEST_LOG="$(mktemp "$LOGS_DIR/$(date +%Y%m%d)_test-question.XXXXXX.md")"
+cleanup_test_log() {
+    rm -f "$TEST_LOG"
+}
+trap cleanup_test_log EXIT
 
 cat > "$TEST_LOG" <<EOF
 # CrossCheck Test Log

@@ -4,6 +4,8 @@ import { TextAnimation, TextAnimationProps } from './components/TextAnimation';
 import { DataVisualization, DataVisualizationProps } from './components/DataVisualization';
 import { ListCountdown, ListCountdownProps } from './components/ListCountdown';
 import { ProductShowcase, ProductShowcaseProps } from './components/ProductShowcase';
+import { CCPromo, CCPromoProps } from './components/CCPromo';
+import { CCPromoEN, CCPromoENProps } from './components/CCPromoEN';
 
 // Default props for each composition
 const defaultTextProps: TextAnimationProps = {
@@ -49,7 +51,7 @@ export const RemotionRoot: React.FC = () => {
       <Composition
         id="TextAnimation"
         component={TextAnimation}
-        durationInFrames={450}
+        durationInFrames={900}
         fps={30}
         width={1920}
         height={1080}
@@ -103,7 +105,7 @@ export const RemotionRoot: React.FC = () => {
       <Composition
         id="ProductShowcase"
         component={ProductShowcase}
-        durationInFrames={450}
+        durationInFrames={900}
         fps={30}
         width={1920}
         height={1080}
@@ -115,6 +117,28 @@ export const RemotionRoot: React.FC = () => {
         width={1920}
         height={1080}
         defaultProps={defaultProductProps}
+      />
+
+      {/* CC Suite Promo - multi-scene promotional video (Chinese) - 29s */}
+      <Composition
+        id="CCPromo"
+        component={CCPromo}
+        durationInFrames={870}
+        fps={30}
+        width={1920}
+        height={1080}
+        defaultProps={{ theme: 'dark' } as CCPromoProps}
+      />
+
+      {/* CC Suite Promo - English version */}
+      <Composition
+        id="CCPromoEN"
+        component={CCPromoEN}
+        durationInFrames={1050}
+        fps={30}
+        width={1920}
+        height={1080}
+        defaultProps={{ theme: 'dark' } as CCPromoENProps}
       />
     </>
   );
