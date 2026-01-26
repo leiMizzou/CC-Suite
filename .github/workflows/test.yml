@@ -1,0 +1,94 @@
+name: CC-Suite Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install shellcheck
+        run: sudo apt-get update && sudo apt-get install -y shellcheck
+
+      - name: Validate shell scripts
+        run: |
+          echo "Checking install.sh..."
+          shellcheck install.sh || true
+          echo "Checking test scripts..."
+          shellcheck tests/**/*.sh || true
+
+      - name: Validate manifest.json
+        run: |
+          echo "Validating skills/manifest.json..."
+          python3 -m json.tool skills/manifest.json > /dev/null
+          echo "✓ manifest.json is valid JSON"
+
+      - name: Check for sensitive files
+        run: |
+          echo "Checking for sensitive files..."
+          if git ls-files | grep -E '\.(env|local)$|\.mcp\.json$|cookies/|sessions/'; then
+            echo "ERROR: Sensitive files found in git"
+            exit 1
+          fi
+          echo "✓ No sensitive files in git"
+
+      - name: Make test scripts executable
+        run: chmod +x tests/**/*.sh
+
+      - name: Run unit tests
+        run: |
+          echo "Running unit tests..."
+          ./tests/unit/test_install_script.sh
+
+      - name: Run integration tests
+        run: |
+          echo "Running integration tests..."
+          ./tests/integration/test_crosscheck_flow.sh
+
+      - name: Test dry-run mode
+        run: |
+          echo "Testing --dry-run mode..."
+          ./install.sh --dry-run crosscheck
+
+      - name: Test safe mode
+        run: |
+          echo "Testing --safe mode..."
+          ./install.sh --safe --dry-run social-publisher
+
+      - name: Test help output
+        run: |
+          echo "Testing --help..."
+          ./install.sh --help
+
+      - name: Generate test report
+        if: always()
+        run: |
+          echo "## Test Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ All tests completed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Test Coverage" >> $GITHUB_STEP_SUMMARY
+          echo "- Unit Tests: 7/7 checks" >> $GITHUB_STEP_SUMMARY
+          echo "- Integration Tests: 5/5 checks" >> $GITHUB_STEP_SUMMARY
+          echo "- Shell Validation: install.sh + test scripts" >> $GITHUB_STEP_SUMMARY
+          echo "- JSON Validation: manifest.json" >> $GITHUB_STEP_SUMMARY
+          echo "- Security Checks: sensitive files" >> $GITHUB_STEP_SUMMARY

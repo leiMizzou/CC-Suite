@@ -106,31 +106,31 @@
   },
   "commands": {
     "init": {
-      "file": "boris-workflow/commands/init.md",
+      "file": "skills/boris-workflow/commands/init.md",
       "description": "Initialize new project with CLAUDE.md and settings.json"
     },
     "add-rule": {
-      "file": "boris-workflow/commands/add-rule.md",
+      "file": "skills/boris-workflow/commands/add-rule.md",
       "description": "Add hookify rule to prevent unwanted behaviors"
     },
     "commit-push-pr": {
-      "file": "boris-workflow/commands/commit-push-pr.md",
+      "file": "skills/boris-workflow/commands/commit-push-pr.md",
       "description": "Commit, push, and open PR in one command"
     },
     "setup-permissions": {
-      "file": "boris-workflow/commands/setup-permissions.md",
+      "file": "skills/boris-workflow/commands/setup-permissions.md",
       "description": "Configure Claude Code permissions"
     },
     "setup-plugins": {
-      "file": "boris-workflow/commands/setup-plugins.md",
+      "file": "skills/boris-workflow/commands/setup-plugins.md",
       "description": "Configure MCP plugins"
     },
     "setup-format-hook": {
-      "file": "boris-workflow/commands/setup-format-hook.md",
+      "file": "skills/boris-workflow/commands/setup-format-hook.md",
       "description": "Setup automatic code formatting hook"
     },
     "setup-ralph-loop": {
-      "file": "boris-workflow/commands/setup-ralph-loop.md",
+      "file": "skills/boris-workflow/commands/setup-ralph-loop.md",
       "description": "Enable Ralph Loop for autonomous development"
     }
   },

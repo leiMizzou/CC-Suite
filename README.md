@@ -59,6 +59,54 @@ Install only the skills you need:
 ./install.sh --force
 ```
 
+## Advanced Features
+
+### 🔒 Safe Installation Modes
+
+```bash
+# Preview what would be installed (no changes made)
+./install.sh --dry-run crosscheck
+
+# Safe mode: skip all external dependencies
+./install.sh --safe social-publisher
+
+# Skip only dependency installation
+./install.sh --skip-deps crosscheck
+```
+
+### 🐍 Python Virtual Environment
+
+Automatic isolated Python environments for each skill:
+
+```bash
+# After installing social-publisher
+source ~/.claude/skills/social-publisher/activate.sh
+
+# Your Python packages are now isolated
+# No version conflicts with system Python
+```
+
+### ✅ Quality Assurance
+
+```bash
+# Run all tests
+./tests/run_all_tests.sh
+
+# Validate manifest.json
+python3 scripts/validate-manifest.py
+
+# Install git hooks for automatic validation
+./scripts/install-hooks.sh
+```
+
+### 📋 Skills Manifest
+
+All skills are documented in `skills/manifest.json`:
+- Skill metadata and dependencies
+- Command and template mappings
+- MCP server configurations
+- Single source of truth for configuration
+
 ## Usage Examples
 
 ### 🛡️ CrossCheck - Multi-Model Verification
