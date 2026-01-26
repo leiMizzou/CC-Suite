@@ -1,12 +1,29 @@
 ---
 name: crosscheck
 description: Cross-check answers from Claude, Codex, and Gemini through a 3-round verification process. Use when you need reliable answers for complex questions, code review, or technical decisions.
-argument-hint: <question>
+argument-hint: <question> [--safe]
 ---
 
 # /crosscheck - Multi-Model Cross Verification
 
 Cross-check answers from Claude, Codex, and Gemini through a 3-round verification process to get more reliable conclusions.
+
+## Security Modes
+
+CrossCheck supports two security modes for Codex MCP calls:
+
+### Default Mode (Full Access)
+- **sandbox**: `danger-full-access` - Codex can execute any code
+- **approval-policy**: `never` - No manual approval required
+- **Use case**: Trusted environments, personal projects, speed-critical tasks
+
+### Safe Mode (`--safe` flag)
+When the user includes `--safe` in the command, use restricted settings:
+- **sandbox**: `read-only` - Codex can only read files, no writes
+- **approval-policy**: `on-failure` - Require approval if commands fail
+- **Use case**: Shared environments, production code review, security-sensitive tasks
+
+**Detection**: If the question/command contains `--safe`, strip it from the question and enable safe mode for all Codex calls.
 
 ## Execution Process
 
@@ -17,12 +34,20 @@ Execute the following 3-round verification process:
 Simultaneously query three models with the same question:
 
 1. **Claude Code** (main model): Think and answer independently
-2. **Codex MCP**: Call with bypass mode
+2. **Codex MCP**: Call with appropriate security mode
    ```javascript
+   // Default mode (no --safe flag)
    mcp__codex__codex({
      prompt: "<question>\n\nPlease analyze from technical and business perspectives, provide your view with specific examples.",
      "approval-policy": "never",
      sandbox: "danger-full-access"
+   })
+
+   // Safe mode (when --safe flag is present)
+   mcp__codex__codex({
+     prompt: "<question>\n\nPlease analyze from technical and business perspectives, provide your view with specific examples.",
+     "approval-policy": "on-failure",
+     sandbox: "read-only"
    })
    ```
 3. **Gemini MCP**: Call with ask-gemini
@@ -87,8 +112,9 @@ Please review and identify:
 ---
 
 Please provide your detailed review.`,
-     "approval-policy": "never",
-     sandbox: "danger-full-access"
+     // Use same security mode as Round 1 (default or safe)
+     "approval-policy": "never",  // or "on-failure" in safe mode
+     sandbox: "danger-full-access"  // or "read-only" in safe mode
    })
    ```
 
@@ -203,6 +229,7 @@ The log file must include:
 
 ## Example Usage
 
+### Default Mode (Full Access)
 ```
 /crosscheck In the era of large models, do we still need to train vertical/domain-specific models?
 ```
@@ -211,6 +238,16 @@ The log file must include:
 /crosscheck What's the best approach for implementing real-time collaboration in a web app?
 ```
 
+### Safe Mode (Restricted Access)
+```
+/crosscheck --safe Review this production code - are there any security vulnerabilities?
+```
+
+```
+/crosscheck --safe Analyze this authentication flow for potential issues
+```
+
+### Code Architecture Review
 ```
 /crosscheck Review this code architecture - is microservices the right choice here?
 ```

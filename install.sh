@@ -13,23 +13,64 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
-# Version pinning
-CODEX_VERSION="0.1"
-GEMINI_CLI_VERSION="0.25.1"
-GEMINI_MCP_VERSION="1.1.4"
-
 # Directories
 SKILLS_DIR="$HOME/.claude/skills"
 COMMANDS_DIR="$HOME/.claude/commands"
 TEMPLATES_DIR="$HOME/.claude/templates"
 CC_SUITE_DIR="$(cd "$(dirname "$0")" && pwd)"
 BORIS_DIR="$CC_SUITE_DIR/skills/boris-workflow"
+MANIFEST_PARSER="$CC_SUITE_DIR/scripts/parse-manifest.py"
 
-# All available skills
-ALL_SKILLS="crosscheck social-publisher video-producer claude-code-setup create-subagent"
+# ============================================================================
+# Manifest-driven configuration (Single Source of Truth)
+# ============================================================================
 
-# Boris workflow commands (installed to ~/.claude/commands/)
-BORIS_COMMANDS="init add-rule commit-push-pr setup-permissions setup-plugins setup-format-hook setup-ralph-loop"
+# Helper function to call manifest parser
+parse_manifest() {
+    if [ -f "$MANIFEST_PARSER" ] && command -v python3 &> /dev/null; then
+        python3 "$MANIFEST_PARSER" "$@"
+    else
+        echo ""
+    fi
+}
+
+# Get all skills from manifest (fallback to hardcoded if parser unavailable)
+get_all_skills() {
+    local skills
+    skills=$(parse_manifest list-skills 2>/dev/null)
+    if [ -n "$skills" ]; then
+        echo "$skills"
+    else
+        # Fallback for environments without Python3
+        echo "crosscheck social-publisher video-producer claude-code-setup create-subagent"
+    fi
+}
+
+# Get all commands from manifest
+get_all_commands() {
+    local commands
+    commands=$(parse_manifest list-commands 2>/dev/null)
+    if [ -n "$commands" ]; then
+        echo "$commands"
+    else
+        # Fallback
+        echo "init add-rule commit-push-pr setup-permissions setup-plugins setup-format-hook setup-ralph-loop"
+    fi
+}
+
+# Dynamic skill and command lists from manifest
+ALL_SKILLS=$(get_all_skills)
+BORIS_COMMANDS=$(get_all_commands)
+
+# Version pinning from manifest (with fallbacks)
+CODEX_VERSION="0.1"
+GEMINI_CLI_VERSION="0.25.1"
+GEMINI_MCP_VERSION="1.1.4"
+
+# Try to load versions from manifest
+if [ -f "$MANIFEST_PARSER" ] && command -v python3 &> /dev/null; then
+    eval "$(parse_manifest get-versions 2>/dev/null)" 2>/dev/null || true
+fi
 
 # Global flags
 FORCE=false
@@ -89,9 +130,19 @@ usage() {
     echo "  $0 --force                      # Reinstall everything"
 }
 
-# Get skill source path
+# Get skill source path (manifest-driven with fallback)
 get_skill_path() {
     local skill=$1
+    local path
+
+    # Try manifest first
+    path=$(parse_manifest get-path "$skill" 2>/dev/null)
+    if [ -n "$path" ]; then
+        echo "$path"
+        return
+    fi
+
+    # Fallback for environments without Python3
     case $skill in
         crosscheck)         echo "crosscheck" ;;
         social-publisher)   echo "social-publisher" ;;
@@ -102,9 +153,19 @@ get_skill_path() {
     esac
 }
 
-# Get skill dependencies
+# Get skill dependencies (manifest-driven with fallback)
 get_skill_deps() {
     local skill=$1
+    local deps
+
+    # Try manifest first
+    deps=$(parse_manifest get-deps "$skill" 2>/dev/null)
+    if [ -n "$deps" ] || [ $? -eq 0 ]; then
+        echo "$deps"
+        return
+    fi
+
+    # Fallback for environments without Python3
     case $skill in
         crosscheck)         echo "codex gemini" ;;
         social-publisher)   echo "playwright" ;;
@@ -115,9 +176,19 @@ get_skill_deps() {
     esac
 }
 
-# Expand skill groups
+# Expand skill groups (manifest-driven with fallback)
 expand_skill() {
     local skill=$1
+    local expanded
+
+    # Try manifest first
+    expanded=$(parse_manifest expand-group "$skill" 2>/dev/null)
+    if [ -n "$expanded" ]; then
+        echo "$expanded"
+        return
+    fi
+
+    # Fallback for environments without Python3
     case $skill in
         boris-workflow)     echo "claude-code-setup create-subagent" ;;
         *)                  echo "$skill" ;;

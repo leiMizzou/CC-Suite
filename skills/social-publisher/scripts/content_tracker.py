@@ -2,22 +2,149 @@
 """
 内容追踪和核查系统
 用于记录社交媒体运营全流程的内容，并在发布后进行验证
+
+Features:
+- Atomic file writes (temp file + rename) to prevent data corruption
+- JSON validation on load to detect corrupted files
+- Backup creation before writes for recovery
 """
 
 import json
 import os
+import tempfile
+import shutil
 from pathlib import Path
 from datetime import datetime
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Any
 
 # 配置目录
 CONFIG_DIR = Path(__file__).parent.parent / ".social_publisher"
 SESSIONS_DIR = CONFIG_DIR / "sessions"
+BACKUP_DIR = CONFIG_DIR / "backups"
 
 
 def ensure_dirs():
     """确保目录存在"""
     SESSIONS_DIR.mkdir(parents=True, exist_ok=True)
+    BACKUP_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def validate_json_data(data: Any, schema_name: str = "session") -> bool:
+    """
+    验证 JSON 数据的基本结构
+    Returns True if valid, raises ValueError if invalid
+    """
+    if not isinstance(data, dict):
+        raise ValueError(f"Invalid {schema_name}: expected dict, got {type(data).__name__}")
+
+    if schema_name == "session":
+        required_fields = ["session_id", "topic", "created_at", "status"]
+        for field in required_fields:
+            if field not in data:
+                raise ValueError(f"Invalid session: missing required field '{field}'")
+
+    return True
+
+
+def atomic_write_json(filepath: Path, data: dict, backup: bool = True) -> None:
+    """
+    原子写入 JSON 文件
+    使用临时文件 + 重命名模式，确保写入要么完全成功，要么完全失败
+
+    Args:
+        filepath: 目标文件路径
+        data: 要写入的数据
+        backup: 是否在写入前创建备份
+    """
+    filepath = Path(filepath)
+
+    # 1. 如果目标文件存在且需要备份，先创建备份
+    if backup and filepath.exists():
+        backup_name = f"{filepath.stem}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.bak"
+        backup_path = BACKUP_DIR / backup_name
+        try:
+            shutil.copy2(filepath, backup_path)
+        except Exception:
+            pass  # 备份失败不阻止写入
+
+    # 2. 先序列化 JSON，确保数据可以正确序列化
+    try:
+        json_str = json.dumps(data, ensure_ascii=False, indent=2)
+    except (TypeError, ValueError) as e:
+        raise ValueError(f"Failed to serialize data to JSON: {e}")
+
+    # 3. 写入临时文件（在同一目录下，确保原子重命名）
+    fd, temp_path = tempfile.mkstemp(
+        dir=filepath.parent,
+        prefix=f".{filepath.stem}_",
+        suffix=".tmp"
+    )
+
+    try:
+        # 写入数据
+        with os.fdopen(fd, 'w', encoding='utf-8') as f:
+            f.write(json_str)
+            f.flush()
+            os.fsync(f.fileno())  # 确保数据写入磁盘
+
+        # 4. 原子重命名（在同一文件系统上是原子的）
+        os.replace(temp_path, filepath)
+
+    except Exception as e:
+        # 清理临时文件
+        try:
+            os.unlink(temp_path)
+        except OSError:
+            pass
+        raise IOError(f"Failed to write file: {e}")
+
+
+def safe_load_json(filepath: Path) -> dict:
+    """
+    安全加载 JSON 文件，带有验证和错误恢复
+
+    Args:
+        filepath: JSON 文件路径
+
+    Returns:
+        解析后的 dict
+
+    Raises:
+        FileNotFoundError: 文件不存在
+        ValueError: JSON 解析失败或验证失败
+    """
+    filepath = Path(filepath)
+
+    if not filepath.exists():
+        raise FileNotFoundError(f"File not found: {filepath}")
+
+    try:
+        with open(filepath, "r", encoding="utf-8") as f:
+            content = f.read()
+
+        if not content.strip():
+            raise ValueError(f"Empty file: {filepath}")
+
+        data = json.loads(content)
+        validate_json_data(data, "session")
+        return data
+
+    except json.JSONDecodeError as e:
+        # 尝试从备份恢复
+        backup_files = sorted(BACKUP_DIR.glob(f"{filepath.stem}_*.bak"), reverse=True)
+        if backup_files:
+            print(f"⚠️ Corrupted file detected, attempting recovery from backup...")
+            try:
+                with open(backup_files[0], "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                # 恢复成功，重写原文件
+                atomic_write_json(filepath, data, backup=False)
+                print(f"✅ Recovered from backup: {backup_files[0].name}")
+                return data
+            except Exception:
+                pass
+
+        raise ValueError(f"Invalid JSON in {filepath}: {e}")
 
 
 class ContentTracker:
@@ -159,19 +286,20 @@ class ContentTracker:
         self._save()
 
     def _save(self):
-        """保存会话数据"""
-        with open(self.session_file, "w", encoding="utf-8") as f:
-            json.dump(self.data, f, ensure_ascii=False, indent=2)
+        """保存会话数据（原子写入）"""
+        atomic_write_json(self.session_file, self.data, backup=True)
 
     @classmethod
     def load(cls, session_id: str) -> "ContentTracker":
-        """加载已有会话"""
+        """加载已有会话（带验证和错误恢复）"""
         session_file = SESSIONS_DIR / f"session_{session_id}.json"
-        if not session_file.exists():
-            raise FileNotFoundError(f"Session {session_id} not found")
 
-        with open(session_file, "r", encoding="utf-8") as f:
-            data = json.load(f)
+        try:
+            data = safe_load_json(session_file)
+        except FileNotFoundError:
+            raise FileNotFoundError(f"Session {session_id} not found")
+        except ValueError as e:
+            raise ValueError(f"Failed to load session {session_id}: {e}")
 
         tracker = cls.__new__(cls)
         tracker.topic = data["topic"]
@@ -616,13 +744,24 @@ def main():
             return
 
         posts = []
-        if args.posts:
-            posts = json.loads(args.posts)
-        else:
-            # 从 stdin 读取
-            import sys
-            if not sys.stdin.isatty():
-                posts = json.load(sys.stdin)
+        try:
+            if args.posts:
+                posts = json.loads(args.posts)
+                if not isinstance(posts, list):
+                    raise ValueError("posts must be a JSON array")
+            else:
+                # 从 stdin 读取
+                import sys
+                if not sys.stdin.isatty():
+                    posts = json.load(sys.stdin)
+                    if not isinstance(posts, list):
+                        raise ValueError("stdin input must be a JSON array")
+        except json.JSONDecodeError as e:
+            print(f"❌ Invalid JSON: {e}")
+            return
+        except ValueError as e:
+            print(f"❌ Validation error: {e}")
+            return
 
         tracker.record_search(args.query, args.time_range, posts)
 

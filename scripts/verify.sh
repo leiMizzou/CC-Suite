@@ -27,7 +27,7 @@ echo ""
 echo -e "${BLUE}[1/4] Checking Installed Skills${NC}"
 echo "────────────────────────────────"
 
-ALL_SKILLS="crosscheck social-publisher claude-code-setup create-subagent"
+ALL_SKILLS="crosscheck social-publisher video-producer claude-code-setup create-subagent"
 installed_count=0
 total_count=0
 

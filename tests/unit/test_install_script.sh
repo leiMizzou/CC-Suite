@@ -29,9 +29,17 @@ echo -e "${GREEN}PASS: install.sh found${NC}"
 # Test 2: Check ALL_SKILLS definition
 echo -e "\n${YELLOW}Test 2: Check ALL_SKILLS list completeness${NC}"
 
-# Extract ALL_SKILLS from install.sh
-ALL_SKILLS=$(grep '^ALL_SKILLS=' "$INSTALL_SCRIPT" | sed 's/ALL_SKILLS="//' | sed 's/"//')
-echo "Found ALL_SKILLS: $ALL_SKILLS"
+# Extract ALL_SKILLS - support both static and manifest-driven
+MANIFEST_PARSER="$PROJECT_ROOT/scripts/parse-manifest.py"
+if [ -f "$MANIFEST_PARSER" ] && command -v python3 &> /dev/null; then
+    # Use manifest parser (new manifest-driven approach)
+    ALL_SKILLS=$(python3 "$MANIFEST_PARSER" list-skills 2>/dev/null)
+    echo "Found ALL_SKILLS (from manifest): $ALL_SKILLS"
+else
+    # Fallback to grep (legacy approach)
+    ALL_SKILLS=$(grep '^ALL_SKILLS=' "$INSTALL_SCRIPT" | sed 's/ALL_SKILLS="//' | sed 's/"//')
+    echo "Found ALL_SKILLS (from script): $ALL_SKILLS"
+fi
 
 # Check for actual skills in directory
 ACTUAL_SKILLS=$(find "$PROJECT_ROOT/skills" -maxdepth 1 -type d ! -name skills ! -name boris-workflow -exec basename {} \; 2>/dev/null | sort)
